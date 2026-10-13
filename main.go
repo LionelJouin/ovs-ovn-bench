@@ -568,9 +568,13 @@ func (e *OVNEnvironment) Start() error {
 		return err
 	}
 
+	_ = os.MkdirAll("/var/run/openvswitch", 0755)
+	_ = os.MkdirAll("/var/run/ovn", 0755)
+	_ = os.MkdirAll("/var/log/openvswitch", 0755)
+	_ = os.MkdirAll("/var/log/ovn", 0755)
+
 	cmdController := exec.Command(e.ovnController, "--detach", "--no-chdir",
 		"--pidfile="+filepath.Join(e.testDir, "controller.pid"),
-		"--unixctl="+filepath.Join(e.testDir, "controller.ctl"),
 		"-vfile:off", "-vconsole:off",
 		e.ovsSock)
 	cmdController.Env = envVars
@@ -603,8 +607,6 @@ func (e *OVNEnvironment) Start() error {
 			return err
 		}
 	}
-
-	_ = exec.Command(e.ovnAppctl, "-t", filepath.Join(e.testDir, "northd.ctl"), "inc-engine/enable-stopwatch").Run()
 
 	// Initialize libovsdb native client to OVN Northbound DB
 	dbModel, err := getDBModel()

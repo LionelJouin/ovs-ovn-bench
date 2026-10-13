@@ -1,12 +1,12 @@
 # Stage 1: Build the Go benchmark binary
-FROM golang:1.24-bookworm AS builder
+FROM golang:1.27-bookworm AS builder
 
 WORKDIR /src
 COPY go.mod go.sum main.go ./
 RUN CGO_ENABLED=0 GOOS=linux go build -o /ovs-ovn-bench .
 
 # Stage 2: Runtime image with Ubuntu packages & jemalloc
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ovn-host \
     libjemalloc2 \
     procps \
+    && mkdir -p /var/run/openvswitch /var/run/ovn /var/log/openvswitch /var/log/ovn \
     && rm -rf /var/cache/apt/* /var/lib/apt/lists/*
 
 WORKDIR /workspace
