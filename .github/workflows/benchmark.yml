@@ -1,0 +1,127 @@
+name: Build, Push, and Run Benchmark
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      scales:
+        description: "Comma-separated scales to evaluate"
+        required: false
+        default: "1,10,100,1000"
+      threads:
+        description: "Thread counts to evaluate (e.g. 1,4,8)"
+        required: false
+        default: "4"
+      objects:
+        description: "Objects to benchmark (port,acl,address_set,port_group,load_balancer,flow,classifier,combined,all)"
+        required: false
+        default: "all"
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    name: Build & Push Container Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set lower case image name
+        id: img_name
+        run: |
+          echo "IMAGE_NAME=$(echo "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=short
+
+      - name: Build and push container image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  run-benchmark:
+    name: Run Benchmark
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Determine image to use
+        id: img
+        run: |
+          REPO_LC=$(echo "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "Building image locally for PR testing..."
+            docker build -t ovs-ovn-bench:local .
+            echo "image=ovs-ovn-bench:local" >> "$GITHUB_OUTPUT"
+          else
+            echo "image=${REPO_LC}:latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run benchmark in container
+        run: |
+          mkdir -p results
+          SCALES="${{ inputs.scales || '1,10,100,1000' }}"
+          THREADS="${{ inputs.threads || '4' }}"
+          OBJECTS="${{ inputs.objects || 'all' }}"
+          
+          echo "Running benchmark with scales=$SCALES, threads=$THREADS, objects=$OBJECTS"
+          docker run --rm \
+            -v "$(pwd)/results:/workspace/results" \
+            "${{ steps.img.outputs.image }}" \
+            -scales "$SCALES" \
+            -threads "$THREADS" \
+            -objects "$OBJECTS"
+
+      - name: Publish Summary to Job
+        if: always()
+        run: |
+          if [ -f results/BENCHMARK_REPORT.md ]; then
+            cat results/BENCHMARK_REPORT.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload Benchmark Results Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: results/

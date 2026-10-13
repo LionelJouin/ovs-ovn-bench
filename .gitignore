@@ -2,6 +2,7 @@
 build/
 bin/
 lib/
+ovs-ovn-bench
 *.o
 *.a
 *.so
