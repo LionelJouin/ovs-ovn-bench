@@ -422,6 +422,17 @@ func NewOVNEnvironment(alloc, jemallocConf, ovsDir, ovnDir, testDir string, nThr
 	}, nil
 }
 
+func verifyJemallocLoaded(pid int) error {
+	data, err := os.ReadFile(fmt.Sprintf("/proc/%d/maps", pid))
+	if err != nil {
+		return fmt.Errorf("failed to read /proc/%d/maps: %w", pid, err)
+	}
+	if !strings.Contains(string(data), "jemalloc") {
+		return fmt.Errorf("process %d does not have libjemalloc loaded in its memory map", pid)
+	}
+	return nil
+}
+
 func (e *OVNEnvironment) Start() error {
 	_ = os.RemoveAll(e.testDir)
 	if err := os.MkdirAll(e.testDir, 0755); err != nil {
@@ -446,14 +457,17 @@ func (e *OVNEnvironment) Start() error {
 	_ = exec.Command(e.ovsdbTool, "create", filepath.Join(e.testDir, "ovs.db"), ovsSchema).Run()
 
 	envVars := os.Environ()
+	envVars = append(envVars, "OVS_RUNDIR="+e.testDir, "OVS_LOGDIR="+e.testDir)
 	if e.alloc == "jemalloc" {
-		if jlib := findJemallocLib(); jlib != "" {
-			conf := e.jemallocConf
-			if conf == "" {
-				conf = defaultJemallocConf
-			}
-			envVars = append(envVars, "LD_PRELOAD="+jlib, "MALLOC_CONF="+conf)
+		jlib := findJemallocLib()
+		if jlib == "" {
+			return fmt.Errorf("allocator 'jemalloc' requested, but libjemalloc.so.2 was not found on system or LD library paths")
 		}
+		conf := e.jemallocConf
+		if conf == "" {
+			conf = defaultJemallocConf
+		}
+		envVars = append(envVars, "LD_PRELOAD="+jlib, "MALLOC_CONF="+conf)
 	}
 
 	cmdNb := exec.Command(e.ovsdbServer, "--detach", "--no-chdir",
@@ -561,6 +575,12 @@ func (e *OVNEnvironment) Start() error {
 	}
 	if e.ovsServerPid, errPid = waitForPidFile(filepath.Join(e.testDir, "ovs.pid"), 5*time.Second); errPid != nil {
 		return errPid
+	}
+
+	if e.alloc == "jemalloc" {
+		if err := verifyJemallocLoaded(e.northdPid); err != nil {
+			return err
+		}
 	}
 
 	_ = exec.Command(e.ovnAppctl, "-t", filepath.Join(e.testDir, "northd.ctl"), "inc-engine/enable-stopwatch").Run()
@@ -703,6 +723,77 @@ func (e *OVNEnvironment) Stop() {
 	_ = os.RemoveAll(e.testDir)
 }
 
+func (e *OVNEnvironment) bindChassisVIFs(portNames []string) {
+	if len(portNames) == 0 {
+		return
+	}
+	var args []string
+	args = append(args, "--db="+e.ovsSock, "--no-wait")
+	for i, pName := range portNames {
+		vifName := fmt.Sprintf("vif-%d", i)
+		args = append(args, "--", "--if-exists", "del-port", "br-int", vifName,
+			"--", "add-port", "br-int", vifName,
+			"--", "set", "Interface", vifName, "type=dummy", "external_ids:iface-id="+pName)
+	}
+	_ = exec.Command(e.ovsVsctl, args...).Run()
+}
+
+func (e *OVNEnvironment) unbindChassisVIFs(count int) {
+	if count <= 0 {
+		return
+	}
+	var args []string
+	args = append(args, "--db="+e.ovsSock, "--no-wait")
+	for i := 0; i < count; i++ {
+		vifName := fmt.Sprintf("vif-%d", i)
+		args = append(args, "--", "--if-exists", "del-port", "br-int", vifName)
+	}
+	_ = exec.Command(e.ovsVsctl, args...).Run()
+}
+
+func setupBaselineSwitch(env *OVNEnvironment, swName string, nPorts int) (*LogicalSwitch, error) {
+	ctx := context.Background()
+	sw := &LogicalSwitch{Name: swName}
+	opsSw, err := env.ovsdbClient.Create(sw)
+	if err != nil {
+		return nil, err
+	}
+	resSw, err := env.Transact(ctx, opsSw...)
+	if err != nil || len(resSw) == 0 {
+		return nil, fmt.Errorf("failed to create logical switch %s: %v", swName, err)
+	}
+	sw.UUID = resSw[0].UUID.GoUUID
+
+	if nPorts > 0 {
+		ports := make([]model.Model, nPorts)
+		namedUUIDs := make([]string, nPorts)
+		var pNames []string
+		for j := 0; j < nPorts; j++ {
+			pName := fmt.Sprintf("%s-p-%d", swName, j)
+			pNames = append(pNames, pName)
+			namedUUIDs[j] = fmt.Sprintf("base_p_%d", j)
+			ports[j] = &LogicalSwitchPort{
+				UUID:         namedUUIDs[j],
+				Name:         pName,
+				Addresses:    []string{fmt.Sprintf("00:00:01:00:%02x:%02x 10.1.%d.%d", (j>>8)&255, j&255, (j>>8)&255, j&255)},
+				PortSecurity: []string{fmt.Sprintf("00:00:01:00:%02x:%02x 10.1.%d.%d", (j>>8)&255, j&255, (j>>8)&255, j&255)},
+			}
+		}
+		opsPorts, _ := env.ovsdbClient.Create(ports...)
+		mutateOps, _ := env.ovsdbClient.Where(sw).Mutate(sw, model.Mutation{
+			Field:   &sw.Ports,
+			Mutator: ovsdb.MutateOperationInsert,
+			Value:   namedUUIDs,
+		})
+		_, _ = env.Transact(ctx, append(opsPorts, mutateOps...)...)
+		env.bindChassisVIFs(pNames)
+	}
+
+	env.Sync()
+	env.Recompute()
+	return sw, nil
+}
+
 // ---------------------------------------------------------------------------
 // Native libovsdb Benchmark Implementations
 // ---------------------------------------------------------------------------
@@ -750,39 +841,24 @@ func benchPort(env *OVNEnvironment, n int) BenchResult {
 			Value:   namedUUIDs,
 		})
 		_, _ = env.Transact(ctx, append(opsPorts, mutateOps...)...)
-
-		// Bind ports to local chassis in OVS via VIFs so ovn-controller and ovs-vswitchd actively process them
-		var vsctlArgs []string
-		vsctlArgs = append(vsctlArgs, "--db="+env.ovsSock, "--no-wait")
-		for j := 0; j < chunkLen; j++ {
-			pName := fmt.Sprintf("p-%d", i+j)
-			vifName := fmt.Sprintf("vif-%d", i+j)
-			vsctlArgs = append(vsctlArgs, "--", "add-port", "br-int", vifName,
-				"--", "set", "Interface", vifName, "type=dummy", "external_ids:iface-id="+pName)
-		}
-		_ = exec.Command(env.ovsVsctl, vsctlArgs...).Run()
 	}
 	env.Sync()
 	addSec := float64(time.Since(t0).Microseconds()) / 1e6
+
+	// Bind representative VIFs in OVS so ovn-controller and ovs-vswitchd actively process the claimed ports
+	numVIFs := int(math.Min(float64(n), 100))
+	var vifNames []string
+	for j := 0; j < numVIFs; j++ {
+		vifNames = append(vifNames, fmt.Sprintf("p-%d", j))
+	}
+	env.bindChassisVIFs(vifNames)
 
 	_, addLoop, addLflow := env.Recompute()
 	peak := env.sampleMemory()
 
 	// Phase 3: Remove N ports from switch and delete rows
 	t1 := time.Now()
-	for i := 0; i < n; i += chunkSize {
-		end := i + chunkSize
-		if end > n {
-			end = n
-		}
-		var delVsctlArgs []string
-		delVsctlArgs = append(delVsctlArgs, "--db="+env.ovsSock, "--no-wait")
-		for j := 0; j < (end - i); j++ {
-			vifName := fmt.Sprintf("vif-%d", i+j)
-			delVsctlArgs = append(delVsctlArgs, "--", "--if-exists", "del-port", "br-int", vifName)
-		}
-		_ = exec.Command(env.ovsVsctl, delVsctlArgs...).Run()
-	}
+	env.unbindChassisVIFs(numVIFs)
 
 	clearSwOp := ovsdb.Operation{
 		Op:    "update",
@@ -811,14 +887,10 @@ func benchPort(env *OVNEnvironment, n int) BenchResult {
 
 func benchACL(env *OVNEnvironment, n int) BenchResult {
 	ctx := context.Background()
-	sw := &LogicalSwitch{Name: "bench-ls"}
-	opsSw, _ := env.ovsdbClient.Create(sw)
-	resSw, _ := env.Transact(ctx, opsSw...)
-	if len(resSw) > 0 {
-		sw.UUID = resSw[0].UUID.GoUUID
+	sw, err := setupBaselineSwitch(env, "bench-ls", 10)
+	if err != nil {
+		fmt.Printf("setupBaselineSwitch error: %v\n", err)
 	}
-	env.Sync()
-	env.Recompute()
 	baseline := env.sampleMemory()
 
 	// Phase 2: Add N ACLs and attach to switch via libovsdb
@@ -888,14 +960,10 @@ func benchACL(env *OVNEnvironment, n int) BenchResult {
 
 func benchAddressSet(env *OVNEnvironment, n int) BenchResult {
 	ctx := context.Background()
-	sw := &LogicalSwitch{Name: "bench-ls"}
-	opsSw, _ := env.ovsdbClient.Create(sw)
-	resSw, _ := env.Transact(ctx, opsSw...)
-	if len(resSw) > 0 {
-		sw.UUID = resSw[0].UUID.GoUUID
+	sw, err := setupBaselineSwitch(env, "bench-ls", 10)
+	if err != nil {
+		fmt.Printf("setupBaselineSwitch error: %v\n", err)
 	}
-	env.Sync()
-	env.Recompute()
 	baseline := env.sampleMemory()
 
 	// Phase 2: Create Address Set with N unique IPs via libovsdb
@@ -1011,18 +1079,15 @@ func benchPortGroup(env *OVNEnvironment, n int) BenchResult {
 				allPortUUIDs = append(allPortUUIDs, res[j].UUID.GoUUID)
 			}
 		}
-
-		// Bind ports to local chassis in OVS via VIFs
-		var vsctlArgs []string
-		vsctlArgs = append(vsctlArgs, "--db="+env.ovsSock, "--no-wait")
-		for j := 0; j < chunkLen; j++ {
-			pName := fmt.Sprintf("p-%d", i+j)
-			vifName := fmt.Sprintf("vif-%d", i+j)
-			vsctlArgs = append(vsctlArgs, "--", "add-port", "br-int", vifName,
-				"--", "set", "Interface", vifName, "type=dummy", "external_ids:iface-id="+pName)
-		}
-		_ = exec.Command(env.ovsVsctl, vsctlArgs...).Run()
 	}
+
+	// Bind representative VIFs in OVS
+	numVIFs := int(math.Min(float64(n), 100))
+	var vifNames []string
+	for j := 0; j < numVIFs; j++ {
+		vifNames = append(vifNames, fmt.Sprintf("p-%d", j))
+	}
+	env.bindChassisVIFs(vifNames)
 
 	acl := &ACL{
 		UUID:      "acl_pg",
@@ -1047,19 +1112,7 @@ func benchPortGroup(env *OVNEnvironment, n int) BenchResult {
 
 	// Phase 3: Remove Port_Group & ACL & Ports
 	t1 := time.Now()
-	for i := 0; i < n; i += chunkSize {
-		end := i + chunkSize
-		if end > n {
-			end = n
-		}
-		var delVsctlArgs []string
-		delVsctlArgs = append(delVsctlArgs, "--db="+env.ovsSock, "--no-wait")
-		for j := 0; j < (end - i); j++ {
-			vifName := fmt.Sprintf("vif-%d", i+j)
-			delVsctlArgs = append(delVsctlArgs, "--", "--if-exists", "del-port", "br-int", vifName)
-		}
-		_ = exec.Command(env.ovsVsctl, delVsctlArgs...).Run()
-	}
+	env.unbindChassisVIFs(numVIFs)
 
 	clearSwOp := ovsdb.Operation{
 		Op:    "update",
@@ -1098,48 +1151,49 @@ func benchPortGroup(env *OVNEnvironment, n int) BenchResult {
 
 func benchLoadBalancer(env *OVNEnvironment, n int) BenchResult {
 	ctx := context.Background()
-	sw := &LogicalSwitch{Name: "bench-ls"}
-	opsSw, _ := env.ovsdbClient.Create(sw)
-	resSw, _ := env.Transact(ctx, opsSw...)
-	if len(resSw) > 0 {
-		sw.UUID = resSw[0].UUID.GoUUID
+	sw, err := setupBaselineSwitch(env, "bench-ls", 10)
+	if err != nil {
+		fmt.Printf("setupBaselineSwitch error: %v\n", err)
 	}
+
+	proto := "tcp"
+	lb := &LoadBalancer{
+		UUID:     "lb_cluster",
+		Name:     "k8s-cluster-lb-tcp",
+		Protocol: &proto,
+		Vips:     make(map[string]string),
+	}
+	opsLb, _ := env.ovsdbClient.Create(lb)
+	mutateOpsSw, _ := env.ovsdbClient.Where(sw).Mutate(sw, model.Mutation{
+		Field:   &sw.LoadBalancer,
+		Mutator: ovsdb.MutateOperationInsert,
+		Value:   []string{"lb_cluster"},
+	})
+	_, _ = env.Transact(ctx, append(opsLb, mutateOpsSw...)...)
 	env.Sync()
 	env.Recompute()
 	baseline := env.sampleMemory()
 
-	// Phase 2: Add N Load Balancers and attach to switch via libovsdb
+	// Phase 2: Add N VIPs into the shared cluster Load Balancer (matching OVN-Kube architecture)
 	t0 := time.Now()
-	proto := "tcp"
 	chunkSize := 300
 	for i := 0; i < n; i += chunkSize {
 		end := i + chunkSize
 		if end > n {
 			end = n
 		}
-		chunkLen := end - i
-		lbs := make([]model.Model, chunkLen)
-		namedUUIDs := make([]string, chunkLen)
-		for j := 0; j < chunkLen; j++ {
-			idx := i + j
-			namedUUID := fmt.Sprintf("lb_%d", idx)
-			namedUUIDs[j] = namedUUID
-			vip := fmt.Sprintf("10.96.%d.%d:80", (idx/250)&255, (idx%250)+1)
-			backends := "10.244.0.1:8080,10.244.0.2:8080"
-			lbs[j] = &LoadBalancer{
-				UUID:     namedUUID,
-				Name:     fmt.Sprintf("lb-%d", idx),
-				Protocol: &proto,
-				Vips:     map[string]string{vip: backends},
-			}
+		chunkVips := make(map[string]string)
+		for j := i; j < end; j++ {
+			vip := fmt.Sprintf("10.96.%d.%d:80", (j/250)&255, (j%250)+1)
+			backends := fmt.Sprintf("10.244.0.1:%d,10.244.0.2:%d", 8080+(j%1000), 8080+(j%1000))
+			chunkVips[vip] = backends
 		}
-		opsLb, _ := env.ovsdbClient.Create(lbs...)
-		mutateOps, _ := env.ovsdbClient.Where(sw).Mutate(sw, model.Mutation{
-			Field:   &sw.LoadBalancer,
+		mutateOps, _ := env.ovsdbClient.Where(lb).Mutate(lb, model.Mutation{
+			Field:   &lb.Vips,
 			Mutator: ovsdb.MutateOperationInsert,
-			Value:   namedUUIDs,
+			Value:   chunkVips,
 		})
-		_, _ = env.Transact(ctx, append(opsLb, mutateOps...)...)
+		_, _ = env.Transact(ctx, mutateOps...)
 	}
 	env.Sync()
 	addSec := float64(time.Since(t0).Microseconds()) / 1e6
@@ -1147,22 +1201,17 @@ func benchLoadBalancer(env *OVNEnvironment, n int) BenchResult {
 	_, addLoop, addLflow := env.Recompute()
 	peak := env.sampleMemory()
 
-	// Phase 3: Remove N Load Balancers from switch and delete rows
+	// Phase 3: Remove all VIPs from the Load Balancer
 	t1 := time.Now()
-	clearSwOp := ovsdb.Operation{
+	clearVipsOp := ovsdb.Operation{
 		Op:    "update",
-		Table: "Logical_Switch",
-		Where: []ovsdb.Condition{ovsdb.NewCondition("name", ovsdb.ConditionEqual, "bench-ls")},
+		Table: "Load_Balancer",
+		Where: []ovsdb.Condition{ovsdb.NewCondition("name", ovsdb.ConditionEqual, "k8s-cluster-lb-tcp")},
 		Row: map[string]interface{}{
-			"load_balancer": ovsdb.OvsSet{GoSet: []interface{}{}},
+			"vips": ovsdb.OvsMap{GoMap: map[interface{}]interface{}{}},
 		},
 	}
-	delLbOp := ovsdb.Operation{
-		Op:    "delete",
-		Table: "Load_Balancer",
-		Where: []ovsdb.Condition{ovsdb.NewCondition("name", ovsdb.ConditionNotEqual, "")},
-	}
-	_, _ = env.Transact(ctx, clearSwOp, delLbOp)
+	_, _ = env.Transact(ctx, clearVipsOp)
 	env.Sync()
 	delSec := float64(time.Since(t1).Microseconds()) / 1e6
 
@@ -1176,7 +1225,9 @@ func benchLoadBalancer(env *OVNEnvironment, n int) BenchResult {
 
 func benchFlow(env *OVNEnvironment, n int) BenchResult {
 	baseline := env.sampleMemory()
-	mgmtSock := "unix:" + filepath.Join(env.testDir, "br-int.mgmt")
+
+	envVars := os.Environ()
+	envVars = append(envVars, "OVS_RUNDIR="+env.testDir, "OVS_LOGDIR="+env.testDir)
 
 	// Phase 2: Add N OpenFlow rules to br-int
 	var buf bytes.Buffer
@@ -1186,8 +1237,9 @@ func benchFlow(env *OVNEnvironment, n int) BenchResult {
 	}
 
 	t0 := time.Now()
-	cmdOf := exec.Command(env.ovsOfctl, "add-flows", mgmtSock, "-")
+	cmdOf := exec.Command(env.ovsOfctl, "add-flows", "br-int", "-")
 	cmdOf.Stdin = &buf
+	cmdOf.Env = envVars
 	out, err := cmdOf.CombinedOutput()
 	if err != nil {
 		fmt.Printf("  [ovs-ofctl error] add-flows failed: %s (%v)\n", string(out), err)
@@ -1197,7 +1249,8 @@ func benchFlow(env *OVNEnvironment, n int) BenchResult {
 
 	// Phase 3: Remove N flows
 	t1 := time.Now()
-	cmdDel := exec.Command(env.ovsOfctl, "del-flows", mgmtSock)
+	cmdDel := exec.Command(env.ovsOfctl, "del-flows", "br-int")
+	cmdDel.Env = envVars
 	outDel, errDel := cmdDel.CombinedOutput()
 	if errDel != nil {
 		fmt.Printf("  [ovs-ofctl error] del-flows failed: %s (%v)\n", string(outDel), errDel)
@@ -1277,6 +1330,13 @@ func benchCombined(env *OVNEnvironment, n int) BenchResult {
 		}
 		_, _ = env.Transact(ctx, append(opsPorts, mutateOps...)...)
 	}
+
+	numVIFs := int(math.Min(float64(nPorts), 50))
+	var vifNames []string
+	for j := 0; j < numVIFs; j++ {
+		vifNames = append(vifNames, fmt.Sprintf("p-%d", j))
+	}
+	env.bindChassisVIFs(vifNames)
 
 	// ACLs
 	for i := 0; i < nAcls; i += chunkSize {
@@ -1359,6 +1419,7 @@ func benchCombined(env *OVNEnvironment, n int) BenchResult {
 
 	// Phase 3: Remove all via libovsdb
 	t1 := time.Now()
+	env.unbindChassisVIFs(numVIFs)
 	delPortOp := ovsdb.Operation{
 		Op:    "delete",
 		Table: "Logical_Switch_Port",
@@ -1752,7 +1813,7 @@ func getSystemInfo() map[string]string {
 	return sysInfo
 }
 
-func resolveBuildDirs(alloc string, cfg *Config) (string, string) {
+func resolveBuildDirs(cfg *Config) (string, string) {
 	ovsDir := cfg.ovsDir
 	ovnDir := cfg.ovnDir
 	inContainer := false
@@ -1761,15 +1822,19 @@ func resolveBuildDirs(alloc string, cfg *Config) (string, string) {
 	}
 	if !cfg.useSystem && !inContainer {
 		if ovsDir == "" {
-			cand := fmt.Sprintf("build/ovs-%s", alloc)
-			if info, err := os.Stat(cand); err == nil && info.IsDir() {
-				ovsDir = cand
+			for _, cand := range []string{"build/ovs-glibc", "build/ovs-jemalloc", "build/ovs"} {
+				if info, err := os.Stat(cand); err == nil && info.IsDir() {
+					ovsDir = cand
+					break
+				}
 			}
 		}
 		if ovnDir == "" {
-			cand := fmt.Sprintf("build/ovn-%s", alloc)
-			if info, err := os.Stat(cand); err == nil && info.IsDir() {
-				ovnDir = cand
+			for _, cand := range []string{"build/ovn-glibc", "build/ovn-jemalloc", "build/ovn"} {
+				if info, err := os.Stat(cand); err == nil && info.IsDir() {
+					ovnDir = cand
+					break
+				}
 			}
 		}
 	}
@@ -1798,7 +1863,7 @@ func dispatchOVNBench(env *OVNEnvironment, obj string, n int) BenchResult {
 }
 
 func runSingleBenchmark(obj, alloc string, n int, cfg *Config) (BenchResult, error) {
-	ovsDir, ovnDir := resolveBuildDirs(alloc, cfg)
+	ovsDir, ovnDir := resolveBuildDirs(cfg)
 
 	primaryT := cfg.threads[0]
 	testDir := filepath.Join(os.TempDir(), fmt.Sprintf("ovn_bench_%s_%s_%d_%d", alloc, obj, n, os.Getpid()))

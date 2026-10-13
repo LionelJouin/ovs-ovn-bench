@@ -110,7 +110,10 @@ env:
   - name: LD_PRELOAD
     value: "/usr/lib64/libjemalloc.so.2"
   - name: MALLOC_CONF
-    value: "background_thread:true,dirty_decay_ms:0,muzzy_decay_ms:0,narenas:4"
+    # In production under continuous traffic, use background thread decay (2s) without muzzy MADV_FREE:
+    value: "background_thread:true,dirty_decay_ms:2000,muzzy_decay_ms:0,narenas:4"
+    # Or for immediate page release on teardown in tightly-bounded containers:
+    # value: "dirty_decay_ms:0,muzzy_decay_ms:0,narenas:4"
 ```
 
 To run end-to-end tests via `kube-burner`:

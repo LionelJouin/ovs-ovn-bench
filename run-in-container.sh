@@ -20,4 +20,9 @@ $RUNTIME build -t ovs-ovn-bench "$SCRIPT_DIR"
 echo "==> Running OVS/OVN scaling benchmark inside container..."
 $RUNTIME run --rm -v "$SCRIPT_DIR/results:/workspace/results:Z" ovs-ovn-bench "$@"
 
+# Ensure generated result files on the host match the host user's UID/GID
+if [ "$(id -u)" != "0" ] && [ -d "$SCRIPT_DIR/results" ]; then
+    $RUNTIME run --rm -v "$SCRIPT_DIR/results:/workspace/results:Z" alpine chown -R "$(id -u):$(id -g)" /workspace/results 2>/dev/null || true
+fi
+
 echo "==> Benchmark complete! Results saved to $SCRIPT_DIR/results/BENCHMARK_REPORT.md"

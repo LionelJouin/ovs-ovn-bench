@@ -93,12 +93,13 @@ jobs:
         id: img
         run: |
           REPO_LC=$(echo "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             echo "Building image locally for PR testing..."
             docker build -t ovs-ovn-bench:local .
             echo "image=ovs-ovn-bench:local" >> "$GITHUB_OUTPUT"
           else
-            echo "image=${REPO_LC}:latest" >> "$GITHUB_OUTPUT"
+            echo "image=${REPO_LC}:${SHORT_SHA}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Run benchmark in container
@@ -132,6 +133,7 @@ jobs:
 
   run-benchmark-multi:
     name: Run Benchmark (Multi-Iteration)
+    if: github.event_name == 'workflow_dispatch'
     needs: build-and-push
     runs-on: ubuntu-latest
     permissions:
@@ -148,12 +150,13 @@ jobs:
         id: img
         run: |
           REPO_LC=$(echo "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             echo "Building image locally for PR testing..."
             docker build -t ovs-ovn-bench:local .
             echo "image=ovs-ovn-bench:local" >> "$GITHUB_OUTPUT"
           else
-            echo "image=${REPO_LC}:latest" >> "$GITHUB_OUTPUT"
+            echo "image=${REPO_LC}:${SHORT_SHA}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Run multi-iteration benchmark in container
