@@ -9,10 +9,12 @@ import (
 	"math"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -251,15 +253,29 @@ func getProcMem(pid int) ProcMem {
 }
 
 func parseStopwatch(out string) float64 {
-	// First preference: Average for steady-state latency
+	// First preference: Short term average for sub-millisecond precision
 	for _, line := range strings.Split(out, "\n") {
-		if strings.Contains(line, "Average:") {
+		if strings.Contains(line, "Short term average:") || strings.Contains(line, "Average:") {
 			parts := strings.Split(line, ":")
 			if len(parts) >= 2 {
 				f := strings.Fields(parts[1])
 				if len(f) > 0 {
 					if v, err := strconv.ParseFloat(f[0], 64); err == nil {
-						return v
+						return round2(v)
+					}
+				}
+			}
+		}
+	}
+	// Second preference: 95th percentile
+	for _, line := range strings.Split(out, "\n") {
+		if strings.Contains(line, "95th percentile:") {
+			parts := strings.Split(line, ":")
+			if len(parts) >= 2 {
+				f := strings.Fields(parts[1])
+				if len(f) > 0 {
+					if v, err := strconv.ParseFloat(f[0], 64); err == nil && v > 0 {
+						return round2(v)
 					}
 				}
 			}
@@ -273,7 +289,7 @@ func parseStopwatch(out string) float64 {
 				f := strings.Fields(parts[1])
 				if len(f) > 0 {
 					if v, err := strconv.ParseFloat(f[0], 64); err == nil {
-						return v
+						return round2(v)
 					}
 				}
 			}
@@ -324,6 +340,11 @@ func waitForPidFile(path string, timeout time.Duration) (int, error) {
 const (
 	defaultJemallocConf = "background_thread:true,dirty_decay_ms:0,muzzy_decay_ms:0"
 	decayWaitTime       = 5 * time.Second
+)
+
+var (
+	activeEnvsMu sync.Mutex
+	activeEnvs   = make(map[*OVNEnvironment]bool)
 )
 
 type OVNEnvironment struct {
@@ -601,7 +622,58 @@ func (e *OVNEnvironment) Start() error {
 	}
 	e.ovsdbClient = ovsdbCli
 
+	activeEnvsMu.Lock()
+	activeEnvs[e] = true
+	activeEnvsMu.Unlock()
+
+	// Perform a steady-state warmup cycle to initialize caches and dynamic linker symbols
+	e.warmup()
+
 	return nil
+}
+
+func (e *OVNEnvironment) warmup() {
+	ctx := context.Background()
+	sw := &LogicalSwitch{Name: "warmup-ls"}
+	opsSw, _ := e.ovsdbClient.Create(sw)
+	resSw, _ := e.Transact(ctx, opsSw...)
+	if len(resSw) > 0 {
+		sw.UUID = resSw[0].UUID.GoUUID
+	}
+	port := &LogicalSwitchPort{UUID: "warmup_p", Name: "warmup-p"}
+	opsP, _ := e.ovsdbClient.Create(port)
+	mutateOps, _ := e.ovsdbClient.Where(sw).Mutate(sw, model.Mutation{
+		Field:   &sw.Ports,
+		Mutator: ovsdb.MutateOperationInsert,
+		Value:   []string{"warmup_p"},
+	})
+	_, _ = e.Transact(ctx, append(opsP, mutateOps...)...)
+	e.Sync()
+	e.Recompute()
+
+	// Clean up warmup objects
+	clearSwOp := ovsdb.Operation{
+		Op:    "update",
+		Table: "Logical_Switch",
+		Where: []ovsdb.Condition{ovsdb.NewCondition("name", ovsdb.ConditionEqual, "warmup-ls")},
+		Row: map[string]interface{}{
+			"ports": ovsdb.OvsSet{GoSet: []interface{}{}},
+		},
+	}
+	delPortOp := ovsdb.Operation{
+		Op:    "delete",
+		Table: "Logical_Switch_Port",
+		Where: []ovsdb.Condition{ovsdb.NewCondition("name", ovsdb.ConditionEqual, "warmup-p")},
+	}
+	delSwOp := ovsdb.Operation{
+		Op:    "delete",
+		Table: "Logical_Switch",
+		Where: []ovsdb.Condition{ovsdb.NewCondition("name", ovsdb.ConditionEqual, "warmup-ls")},
+	}
+	_, _ = e.Transact(ctx, clearSwOp, delPortOp, delSwOp)
+	e.Sync()
+	e.Recompute()
+	time.Sleep(500 * time.Millisecond)
 }
 
 type PodMemSnapshot struct {
@@ -626,12 +698,12 @@ func (e *OVNEnvironment) sampleMemory() PodMemSnapshot {
 	}
 	for name, pid := range pids {
 		mem := getProcMem(pid)
-		// Use RssAnon (private anonymous memory allocated by the malloc implementation)
-		// to prevent multi-counting shared read-only .so library pages across daemons.
+		// RssAnon isolates private heap allocations (preventing 6x multi-counting of shared libraries)
+		// VmHWM captures the true kernel-recorded high-water mark of resident memory
 		snap.RSS[name] = mem.RssAnon
-		snap.Peak[name] = mem.RssAnon
+		snap.Peak[name] = mem.VmHWM
 		snap.TotalRSS += mem.RssAnon
-		snap.TotalPeak += mem.RssAnon
+		snap.TotalPeak += mem.VmHWM
 	}
 	snap.TotalRSS = round2(snap.TotalRSS)
 	snap.TotalPeak = round2(snap.TotalPeak)
@@ -641,7 +713,7 @@ func (e *OVNEnvironment) sampleMemory() PodMemSnapshot {
 func buildBenchResult(base, peak, post PodMemSnapshot, addSec, addRate, addLoop, addLflow, delSec, delLoop float64) BenchResult {
 	res := BenchResult{
 		BaselineRSS: round2(base.TotalRSS),
-		PeakRSS:     round2(peak.TotalPeak),
+		PeakRSS:     round2(peak.TotalRSS),
 		PostDelRSS:  round2(post.TotalRSS),
 		RetainedRSS: round2(post.TotalRSS - base.TotalRSS),
 		AddSec:      round3(addSec),
@@ -655,7 +727,7 @@ func buildBenchResult(base, peak, post PodMemSnapshot, addSec, addRate, addLoop,
 	for name := range base.RSS {
 		res.Components[name] = ComponentMem{
 			BaselineRSS: round2(base.RSS[name]),
-			PeakRSS:     round2(peak.Peak[name]),
+			PeakRSS:     round2(peak.RSS[name]),
 			PostDelRSS:  round2(post.RSS[name]),
 			RetainedRSS: round2(post.RSS[name] - base.RSS[name]),
 		}
@@ -711,6 +783,10 @@ func (e *OVNEnvironment) Recompute() (wallMs, loopMs, lflowMs float64) {
 }
 
 func (e *OVNEnvironment) Stop() {
+	activeEnvsMu.Lock()
+	delete(activeEnvs, e)
+	activeEnvsMu.Unlock()
+
 	if e.ovsdbClient != nil {
 		e.ovsdbClient.Close()
 	}
@@ -727,28 +803,43 @@ func (e *OVNEnvironment) bindChassisVIFs(portNames []string) {
 	if len(portNames) == 0 {
 		return
 	}
-	var args []string
-	args = append(args, "--db="+e.ovsSock, "--no-wait")
-	for i, pName := range portNames {
-		vifName := fmt.Sprintf("vif-%d", i)
-		args = append(args, "--", "--if-exists", "del-port", "br-int", vifName,
-			"--", "add-port", "br-int", vifName,
-			"--", "set", "Interface", vifName, "type=dummy", "external_ids:iface-id="+pName)
+	chunkSize := 300
+	for i := 0; i < len(portNames); i += chunkSize {
+		end := i + chunkSize
+		if end > len(portNames) {
+			end = len(portNames)
+		}
+		var args []string
+		args = append(args, "--db="+e.ovsSock, "--no-wait")
+		for j := i; j < end; j++ {
+			pName := portNames[j]
+			vifName := fmt.Sprintf("vif-%d", j)
+			args = append(args, "--", "--if-exists", "del-port", "br-int", vifName,
+				"--", "add-port", "br-int", vifName,
+				"--", "set", "Interface", vifName, "type=dummy", "external_ids:iface-id="+pName)
+		}
+		_ = exec.Command(e.ovsVsctl, args...).Run()
 	}
-	_ = exec.Command(e.ovsVsctl, args...).Run()
 }
 
 func (e *OVNEnvironment) unbindChassisVIFs(count int) {
 	if count <= 0 {
 		return
 	}
-	var args []string
-	args = append(args, "--db="+e.ovsSock, "--no-wait")
-	for i := 0; i < count; i++ {
-		vifName := fmt.Sprintf("vif-%d", i)
-		args = append(args, "--", "--if-exists", "del-port", "br-int", vifName)
+	chunkSize := 300
+	for i := 0; i < count; i += chunkSize {
+		end := i + chunkSize
+		if end > count {
+			end = count
+		}
+		var args []string
+		args = append(args, "--db="+e.ovsSock, "--no-wait")
+		for j := i; j < end; j++ {
+			vifName := fmt.Sprintf("vif-%d", j)
+			args = append(args, "--", "--if-exists", "del-port", "br-int", vifName)
+		}
+		_ = exec.Command(e.ovsVsctl, args...).Run()
 	}
-	_ = exec.Command(e.ovsVsctl, args...).Run()
 }
 
 func setupBaselineSwitch(env *OVNEnvironment, swName string, nPorts int) (*LogicalSwitch, error) {
@@ -846,9 +937,8 @@ func benchPort(env *OVNEnvironment, n int) BenchResult {
 	addSec := float64(time.Since(t0).Microseconds()) / 1e6
 
 	// Bind representative VIFs in OVS so ovn-controller and ovs-vswitchd actively process the claimed ports
-	numVIFs := int(math.Min(float64(n), 100))
 	var vifNames []string
-	for j := 0; j < numVIFs; j++ {
+	for j := 0; j < n; j++ {
 		vifNames = append(vifNames, fmt.Sprintf("p-%d", j))
 	}
 	env.bindChassisVIFs(vifNames)
@@ -858,7 +948,7 @@ func benchPort(env *OVNEnvironment, n int) BenchResult {
 
 	// Phase 3: Remove N ports from switch and delete rows
 	t1 := time.Now()
-	env.unbindChassisVIFs(numVIFs)
+	env.unbindChassisVIFs(n)
 
 	clearSwOp := ovsdb.Operation{
 		Op:    "update",
@@ -1082,9 +1172,8 @@ func benchPortGroup(env *OVNEnvironment, n int) BenchResult {
 	}
 
 	// Bind representative VIFs in OVS
-	numVIFs := int(math.Min(float64(n), 100))
 	var vifNames []string
-	for j := 0; j < numVIFs; j++ {
+	for j := 0; j < n; j++ {
 		vifNames = append(vifNames, fmt.Sprintf("p-%d", j))
 	}
 	env.bindChassisVIFs(vifNames)
@@ -1112,7 +1201,7 @@ func benchPortGroup(env *OVNEnvironment, n int) BenchResult {
 
 	// Phase 3: Remove Port_Group & ACL & Ports
 	t1 := time.Now()
-	env.unbindChassisVIFs(numVIFs)
+	env.unbindChassisVIFs(n)
 
 	clearSwOp := ovsdb.Operation{
 		Op:    "update",
@@ -1278,7 +1367,10 @@ func benchCombined(env *OVNEnvironment, n int) BenchResult {
 	// Router and Switches
 	router := &LogicalRouter{Name: "r-main"}
 	opsR, _ := env.ovsdbClient.Create(router)
-	_, _ = env.Transact(ctx, opsR...)
+	resR, _ := env.Transact(ctx, opsR...)
+	if len(resR) > 0 {
+		router.UUID = resR[0].UUID.GoUUID
+	}
 
 	switches := make([]*LogicalSwitch, nSwitches)
 	swModels := make([]model.Model, nSwitches)
@@ -1293,6 +1385,54 @@ func benchCombined(env *OVNEnvironment, n int) BenchResult {
 			switches[s].UUID = resSw[s].UUID.GoUUID
 		}
 	}
+
+	// Connect each switch to r-main via L3 LogicalRouterPort and router patch port
+	var rPortUUIDs []string
+	var rPortModels []model.Model
+	var swPatchModels []model.Model
+	swPatchUUIDs := make(map[int]string)
+	for s := 0; s < nSwitches; s++ {
+		lrpUUID := fmt.Sprintf("lrp_sw_%d", s)
+		lrpName := fmt.Sprintf("lrp-sw-%d", s)
+		rPortUUIDs = append(rPortUUIDs, lrpUUID)
+		rPortModels = append(rPortModels, &LogicalRouterPort{
+			UUID:     lrpUUID,
+			Name:     lrpName,
+			MAC:      fmt.Sprintf("00:ff:00:00:%02x:%02x", (s>>8)&255, s&255),
+			Networks: []string{fmt.Sprintf("10.%d.0.1/24", s)},
+		})
+
+		patchUUID := fmt.Sprintf("patch_sw_%d", s)
+		patchName := fmt.Sprintf("patch-sw-%d", s)
+		swPatchUUIDs[s] = patchUUID
+		swPatchModels = append(swPatchModels, &LogicalSwitchPort{
+			UUID:      patchUUID,
+			Name:      patchName,
+			Type:      "router",
+			Addresses: []string{"router"},
+			Options:   map[string]string{"router-port": lrpName},
+		})
+	}
+	opsLRP, _ := env.ovsdbClient.Create(rPortModels...)
+	mutateR, _ := env.ovsdbClient.Where(router).Mutate(router, model.Mutation{
+		Field:   &router.Ports,
+		Mutator: ovsdb.MutateOperationInsert,
+		Value:   rPortUUIDs,
+	})
+	opsPatch, _ := env.ovsdbClient.Create(swPatchModels...)
+	var mutateSwPatch []ovsdb.Operation
+	for s := 0; s < nSwitches; s++ {
+		m, _ := env.ovsdbClient.Where(switches[s]).Mutate(switches[s], model.Mutation{
+			Field:   &switches[s].Ports,
+			Mutator: ovsdb.MutateOperationInsert,
+			Value:   []string{swPatchUUIDs[s]},
+		})
+		mutateSwPatch = append(mutateSwPatch, m...)
+	}
+	allL3 := append(opsLRP, mutateR...)
+	allL3 = append(allL3, opsPatch...)
+	allL3 = append(allL3, mutateSwPatch...)
+	_, _ = env.Transact(ctx, allL3...)
 
 	// Ports
 	chunkSize := 300
@@ -1331,9 +1471,8 @@ func benchCombined(env *OVNEnvironment, n int) BenchResult {
 		_, _ = env.Transact(ctx, append(opsPorts, mutateOps...)...)
 	}
 
-	numVIFs := int(math.Min(float64(nPorts), 50))
 	var vifNames []string
-	for j := 0; j < numVIFs; j++ {
+	for j := 0; j < nPorts; j++ {
 		vifNames = append(vifNames, fmt.Sprintf("p-%d", j))
 	}
 	env.bindChassisVIFs(vifNames)
@@ -1419,7 +1558,7 @@ func benchCombined(env *OVNEnvironment, n int) BenchResult {
 
 	// Phase 3: Remove all via libovsdb
 	t1 := time.Now()
-	env.unbindChassisVIFs(numVIFs)
+	env.unbindChassisVIFs(nPorts)
 	delPortOp := ovsdb.Operation{
 		Op:    "delete",
 		Table: "Logical_Switch_Port",
@@ -1467,8 +1606,12 @@ func round2(v float64) float64 { return math.Round(v*100) / 100 }
 func round3(v float64) float64 { return math.Round(v*1000) / 1000 }
 
 func calcPct(vGlibc, vJemalloc float64) string {
-	if vGlibc == 0 {
+	if vGlibc <= 0 {
 		return "N/A"
+	}
+	// Filter sub-millisecond timer resolution noise
+	if vGlibc <= 1.0 && vJemalloc <= 1.0 {
+		return "~Parity (<1ms)"
 	}
 	diff := ((vJemalloc - vGlibc) / vGlibc) * 100.0
 	if math.Abs(diff) < 1.0 {
@@ -1552,17 +1695,33 @@ func generateReport(results map[string]map[string]map[string]BenchResult, sysInf
 		if !exists {
 			continue
 		}
-		title := objTitles[obj]
-		lines = append(lines, fmt.Sprintf("## %s", title), "")
-		lines = append(lines, "| Scale (N) | Phase / Metric | glibc malloc | jemalloc | Relative Difference |")
-		lines = append(lines, "|---|---|---|---|---|")
-
 		var scalesList []int
-		for sStr := range scalesData {
+		for sStr, allocMap := range scalesData {
+			if len(allocMap) == 0 {
+				continue
+			}
+			hasData := false
+			for _, res := range allocMap {
+				if res.AddRate > 0 || res.PeakRSS > 0 || res.BaselineRSS > 0 {
+					hasData = true
+					break
+				}
+			}
+			if !hasData {
+				continue
+			}
 			if s, err := strconv.Atoi(sStr); err == nil {
 				scalesList = append(scalesList, s)
 			}
 		}
+		if len(scalesList) == 0 {
+			continue
+		}
+
+		title := objTitles[obj]
+		lines = append(lines, fmt.Sprintf("## %s", title), "")
+		lines = append(lines, "| Scale (N) | Phase / Metric | glibc malloc | jemalloc | Relative Difference |")
+		lines = append(lines, "|---|---|---|---|---|")
 		for i := 0; i < len(scalesList); i++ {
 			for j := i + 1; j < len(scalesList); j++ {
 				if scalesList[i] > scalesList[j] {
@@ -1581,8 +1740,12 @@ func generateReport(results map[string]map[string]map[string]BenchResult, sysInf
 			addLabel := "Add Duration"
 			rateLabel := "Add Rate"
 			delLabel := "Delete Duration"
+			if obj == "address_set" {
+				addUnit = "addrs/s"
+				rateLabel = "Address Insertion Rate"
+			}
 
-			lines = append(lines, fmt.Sprintf("| **%d** | Total Pod Baseline RSS | %.2f MiB | %.2f MiB | %s |",
+			lines = append(lines, fmt.Sprintf("| **%d** | Total Pod Baseline Heap (RssAnon) | %.2f MiB | %.2f MiB | %s |",
 				nVal, g.BaselineRSS, j.BaselineRSS, calcPct(g.BaselineRSS, j.BaselineRSS)))
 			lines = append(lines, fmt.Sprintf("| | %s | %.3f s | %.3f s | %s |",
 				addLabel, g.AddSec, j.AddSec, calcPct(g.AddSec, j.AddSec)))
@@ -1604,7 +1767,7 @@ func generateReport(results map[string]map[string]map[string]BenchResult, sysInf
 				}
 			}
 
-			lines = append(lines, fmt.Sprintf("| | Total Pod Peak RSS (`VmHWM`) | %.2f MiB | %.2f MiB | %s |",
+			lines = append(lines, fmt.Sprintf("| | Total Pod Peak Heap (RssAnon) | %.2f MiB | %.2f MiB | %s |",
 				g.PeakRSS, j.PeakRSS, calcPct(g.PeakRSS, j.PeakRSS)))
 			lines = append(lines, fmt.Sprintf("| | %s | %.3f s | %.3f s | %s |",
 				delLabel, g.DelSec, j.DelSec, calcPct(g.DelSec, j.DelSec)))
@@ -1614,7 +1777,7 @@ func generateReport(results map[string]map[string]map[string]BenchResult, sysInf
 					g.DelLoopMs, j.DelLoopMs, calcPct(g.DelLoopMs, j.DelLoopMs)))
 			}
 
-			lines = append(lines, fmt.Sprintf("| | Total Pod Post-Delete RSS | %.2f MiB | %.2f MiB | %s |",
+			lines = append(lines, fmt.Sprintf("| | Total Pod Post-Delete Heap (RssAnon) | %.2f MiB | %.2f MiB | %s |",
 				g.PostDelRSS, j.PostDelRSS, calcPct(g.PostDelRSS, j.PostDelRSS)))
 			lines = append(lines, fmt.Sprintf("| | **Total Pod Retained Heap** | **%+.2f MiB** | **%+.2f MiB** | **%+.2f MiB** |",
 				g.RetainedRSS, j.RetainedRSS, j.RetainedRSS-g.RetainedRSS))
@@ -1634,7 +1797,7 @@ func generateReport(results map[string]map[string]map[string]BenchResult, sysInf
 				for _, comp := range compOrder {
 					gC := g.Components[comp.key]
 					jC := j.Components[comp.key]
-					lines = append(lines, fmt.Sprintf("| | ├─ `%s` (Peak / Retained) | %.2f / %+.2f MiB | %.2f / %+.2f MiB | %s / %+.2f MiB |",
+					lines = append(lines, fmt.Sprintf("| | ├─ `%s` (Peak / Retained Heap) | %.2f / %+.2f MiB | %.2f / %+.2f MiB | %s / %+.2f MiB |",
 						comp.name, gC.PeakRSS, gC.RetainedRSS, jC.PeakRSS, jC.RetainedRSS, calcPct(gC.PeakRSS, jC.PeakRSS), jC.RetainedRSS-gC.RetainedRSS))
 				}
 			}
@@ -2027,9 +2190,19 @@ func computeMedianResult(results []BenchResult) BenchResult {
 		}
 	}
 
-	if len(results[mid].ThreadLoops) > 0 {
-		med.ThreadLoops = results[mid].ThreadLoops
-		med.ThreadLflows = results[mid].ThreadLflows
+	if len(results[0].ThreadLoops) > 0 {
+		med.ThreadLoops = make(map[string]float64)
+		med.ThreadLflows = make(map[string]float64)
+		for tKey := range results[0].ThreadLoops {
+			tLoopList := make([]float64, n)
+			tLflowList := make([]float64, n)
+			for i, r := range results {
+				tLoopList[i] = r.ThreadLoops[tKey]
+				tLflowList[i] = r.ThreadLflows[tKey]
+			}
+			med.ThreadLoops[tKey] = round1(getMedianFloat(tLoopList))
+			med.ThreadLflows[tKey] = round1(getMedianFloat(tLflowList))
+		}
 	}
 	return med
 }
@@ -2041,6 +2214,19 @@ func computeMedianResult(results []BenchResult) BenchResult {
 func main() {
 	cfg := parseConfig()
 	sysInfo := getSystemInfo()
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		fmt.Println("\n[signal] Interrupted by user. Cleaning up all active daemons...")
+		activeEnvsMu.Lock()
+		for e := range activeEnvs {
+			e.Stop()
+		}
+		activeEnvsMu.Unlock()
+		os.Exit(1)
+	}()
 
 	fmt.Printf("System: %s | %s cores | %s RAM\n", sysInfo["cpu_model"], sysInfo["cpu_cores"], sysInfo["total_ram"])
 	fmt.Printf("Testing Objects (via native libovsdb): %v\n", cfg.objects)
