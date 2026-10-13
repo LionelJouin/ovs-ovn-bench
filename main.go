@@ -85,8 +85,9 @@ type LogicalRouterPort struct {
 }
 
 type ProcMem struct {
-	VmRSS float64 `json:"vm_rss_mib"`
-	VmHWM float64 `json:"vm_hwm_mib"`
+	RssAnon float64 `json:"rss_anon_mib"`
+	VmRSS   float64 `json:"vm_rss_mib"`
+	VmHWM   float64 `json:"vm_hwm_mib"`
 }
 
 type ComponentMem struct {
@@ -222,6 +223,9 @@ func findJemallocLib() string {
 
 func getProcMem(pid int) ProcMem {
 	res := ProcMem{}
+	if pid <= 0 {
+		return res
+	}
 	data, err := os.ReadFile(fmt.Sprintf("/proc/%d/status", pid))
 	if err != nil {
 		return res
@@ -232,9 +236,12 @@ func getProcMem(pid int) ProcMem {
 			k := strings.TrimSuffix(fields[0], ":")
 			v, err := strconv.ParseFloat(fields[1], 64)
 			if err == nil {
-				if k == "VmRSS" {
+				switch k {
+				case "RssAnon":
+					res.RssAnon = math.Round((v/1024.0)*100) / 100
+				case "VmRSS":
 					res.VmRSS = math.Round((v/1024.0)*100) / 100
-				} else if k == "VmHWM" {
+				case "VmHWM":
 					res.VmHWM = math.Round((v/1024.0)*100) / 100
 				}
 			}
@@ -244,6 +251,21 @@ func getProcMem(pid int) ProcMem {
 }
 
 func parseStopwatch(out string) float64 {
+	// First preference: Average for steady-state latency
+	for _, line := range strings.Split(out, "\n") {
+		if strings.Contains(line, "Average:") {
+			parts := strings.Split(line, ":")
+			if len(parts) >= 2 {
+				f := strings.Fields(parts[1])
+				if len(f) > 0 {
+					if v, err := strconv.ParseFloat(f[0], 64); err == nil {
+						return v
+					}
+				}
+			}
+		}
+	}
+	// Fallback to Maximum
 	for _, line := range strings.Split(out, "\n") {
 		if strings.Contains(line, "Maximum:") {
 			parts := strings.Split(line, ":")
@@ -277,6 +299,22 @@ func killPidFile(path string) {
 		}
 	}
 	_ = syscall.Kill(pid, syscall.SIGKILL)
+}
+
+func waitForPidFile(path string, timeout time.Duration) (int, error) {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		if data, err := os.ReadFile(path); err == nil {
+			pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
+			if err == nil && pid > 0 {
+				if err := syscall.Kill(pid, 0); err == nil {
+					return pid, nil
+				}
+			}
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	return 0, fmt.Errorf("timeout waiting for pidfile %q", path)
 }
 
 // ---------------------------------------------------------------------------
@@ -505,23 +543,25 @@ func (e *OVNEnvironment) Start() error {
 		return err
 	}
 
-	time.Sleep(300 * time.Millisecond)
-
-	readPid := func(p string) int {
-		data, err := os.ReadFile(filepath.Join(e.testDir, p))
-		if err != nil {
-			return 0
-		}
-		pid, _ := strconv.Atoi(strings.TrimSpace(string(data)))
-		return pid
+	var errPid error
+	if e.northdPid, errPid = waitForPidFile(filepath.Join(e.testDir, "northd.pid"), 5*time.Second); errPid != nil {
+		return errPid
 	}
-
-	e.northdPid = readPid("northd.pid")
-	e.controllerPid = readPid("controller.pid")
-	e.vswitchdPid = readPid("vswitchd.pid")
-	e.nbServerPid = readPid("nb.pid")
-	e.sbServerPid = readPid("sb.pid")
-	e.ovsServerPid = readPid("ovs.pid")
+	if e.controllerPid, errPid = waitForPidFile(filepath.Join(e.testDir, "controller.pid"), 5*time.Second); errPid != nil {
+		return errPid
+	}
+	if e.vswitchdPid, errPid = waitForPidFile(filepath.Join(e.testDir, "vswitchd.pid"), 5*time.Second); errPid != nil {
+		return errPid
+	}
+	if e.nbServerPid, errPid = waitForPidFile(filepath.Join(e.testDir, "nb.pid"), 5*time.Second); errPid != nil {
+		return errPid
+	}
+	if e.sbServerPid, errPid = waitForPidFile(filepath.Join(e.testDir, "sb.pid"), 5*time.Second); errPid != nil {
+		return errPid
+	}
+	if e.ovsServerPid, errPid = waitForPidFile(filepath.Join(e.testDir, "ovs.pid"), 5*time.Second); errPid != nil {
+		return errPid
+	}
 
 	_ = exec.Command(e.ovnAppctl, "-t", filepath.Join(e.testDir, "northd.ctl"), "inc-engine/enable-stopwatch").Run()
 
@@ -566,10 +606,12 @@ func (e *OVNEnvironment) sampleMemory() PodMemSnapshot {
 	}
 	for name, pid := range pids {
 		mem := getProcMem(pid)
-		snap.RSS[name] = mem.VmRSS
-		snap.Peak[name] = mem.VmHWM
-		snap.TotalRSS += mem.VmRSS
-		snap.TotalPeak += mem.VmHWM
+		// Use RssAnon (private anonymous memory allocated by the malloc implementation)
+		// to prevent multi-counting shared read-only .so library pages across daemons.
+		snap.RSS[name] = mem.RssAnon
+		snap.Peak[name] = mem.RssAnon
+		snap.TotalRSS += mem.RssAnon
+		snap.TotalPeak += mem.RssAnon
 	}
 	snap.TotalRSS = round2(snap.TotalRSS)
 	snap.TotalPeak = round2(snap.TotalPeak)
@@ -708,6 +750,17 @@ func benchPort(env *OVNEnvironment, n int) BenchResult {
 			Value:   namedUUIDs,
 		})
 		_, _ = env.Transact(ctx, append(opsPorts, mutateOps...)...)
+
+		// Bind ports to local chassis in OVS via VIFs so ovn-controller and ovs-vswitchd actively process them
+		var vsctlArgs []string
+		vsctlArgs = append(vsctlArgs, "--db="+env.ovsSock, "--no-wait")
+		for j := 0; j < chunkLen; j++ {
+			pName := fmt.Sprintf("p-%d", i+j)
+			vifName := fmt.Sprintf("vif-%d", i+j)
+			vsctlArgs = append(vsctlArgs, "--", "add-port", "br-int", vifName,
+				"--", "set", "Interface", vifName, "type=dummy", "external_ids:iface-id="+pName)
+		}
+		_ = exec.Command(env.ovsVsctl, vsctlArgs...).Run()
 	}
 	env.Sync()
 	addSec := float64(time.Since(t0).Microseconds()) / 1e6
@@ -717,6 +770,20 @@ func benchPort(env *OVNEnvironment, n int) BenchResult {
 
 	// Phase 3: Remove N ports from switch and delete rows
 	t1 := time.Now()
+	for i := 0; i < n; i += chunkSize {
+		end := i + chunkSize
+		if end > n {
+			end = n
+		}
+		var delVsctlArgs []string
+		delVsctlArgs = append(delVsctlArgs, "--db="+env.ovsSock, "--no-wait")
+		for j := 0; j < (end - i); j++ {
+			vifName := fmt.Sprintf("vif-%d", i+j)
+			delVsctlArgs = append(delVsctlArgs, "--", "--if-exists", "del-port", "br-int", vifName)
+		}
+		_ = exec.Command(env.ovsVsctl, delVsctlArgs...).Run()
+	}
+
 	clearSwOp := ovsdb.Operation{
 		Op:    "update",
 		Table: "Logical_Switch",
@@ -944,6 +1011,17 @@ func benchPortGroup(env *OVNEnvironment, n int) BenchResult {
 				allPortUUIDs = append(allPortUUIDs, res[j].UUID.GoUUID)
 			}
 		}
+
+		// Bind ports to local chassis in OVS via VIFs
+		var vsctlArgs []string
+		vsctlArgs = append(vsctlArgs, "--db="+env.ovsSock, "--no-wait")
+		for j := 0; j < chunkLen; j++ {
+			pName := fmt.Sprintf("p-%d", i+j)
+			vifName := fmt.Sprintf("vif-%d", i+j)
+			vsctlArgs = append(vsctlArgs, "--", "add-port", "br-int", vifName,
+				"--", "set", "Interface", vifName, "type=dummy", "external_ids:iface-id="+pName)
+		}
+		_ = exec.Command(env.ovsVsctl, vsctlArgs...).Run()
 	}
 
 	acl := &ACL{
@@ -969,6 +1047,20 @@ func benchPortGroup(env *OVNEnvironment, n int) BenchResult {
 
 	// Phase 3: Remove Port_Group & ACL & Ports
 	t1 := time.Now()
+	for i := 0; i < n; i += chunkSize {
+		end := i + chunkSize
+		if end > n {
+			end = n
+		}
+		var delVsctlArgs []string
+		delVsctlArgs = append(delVsctlArgs, "--db="+env.ovsSock, "--no-wait")
+		for j := 0; j < (end - i); j++ {
+			vifName := fmt.Sprintf("vif-%d", i+j)
+			delVsctlArgs = append(delVsctlArgs, "--", "--if-exists", "del-port", "br-int", vifName)
+		}
+		_ = exec.Command(env.ovsVsctl, delVsctlArgs...).Run()
+	}
+
 	clearSwOp := ovsdb.Operation{
 		Op:    "update",
 		Table: "Logical_Switch",
@@ -1084,6 +1176,7 @@ func benchLoadBalancer(env *OVNEnvironment, n int) BenchResult {
 
 func benchFlow(env *OVNEnvironment, n int) BenchResult {
 	baseline := env.sampleMemory()
+	mgmtSock := "unix:" + filepath.Join(env.testDir, "br-int.mgmt")
 
 	// Phase 2: Add N OpenFlow rules to br-int
 	var buf bytes.Buffer
@@ -1093,15 +1186,22 @@ func benchFlow(env *OVNEnvironment, n int) BenchResult {
 	}
 
 	t0 := time.Now()
-	cmdOf := exec.Command(env.ovsOfctl, "add-flows", "br-int", "-")
+	cmdOf := exec.Command(env.ovsOfctl, "add-flows", mgmtSock, "-")
 	cmdOf.Stdin = &buf
-	_ = cmdOf.Run()
+	out, err := cmdOf.CombinedOutput()
+	if err != nil {
+		fmt.Printf("  [ovs-ofctl error] add-flows failed: %s (%v)\n", string(out), err)
+	}
 	addSec := float64(time.Since(t0).Microseconds()) / 1e6
 	peak := env.sampleMemory()
 
 	// Phase 3: Remove N flows
 	t1 := time.Now()
-	_ = exec.Command(env.ovsOfctl, "del-flows", "br-int").Run()
+	cmdDel := exec.Command(env.ovsOfctl, "del-flows", mgmtSock)
+	outDel, errDel := cmdDel.CombinedOutput()
+	if errDel != nil {
+		fmt.Printf("  [ovs-ofctl error] del-flows failed: %s (%v)\n", string(outDel), errDel)
+	}
 	delSec := float64(time.Since(t1).Microseconds()) / 1e6
 
 	time.Sleep(env.decayWaitTime())
