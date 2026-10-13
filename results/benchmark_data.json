@@ -1,343 +1,1554 @@
 {
   "data": {
     "acl": {
-      "1": {},
-      "10": {
+      "1": {
         "glibc": {
-          "baseline_rss_mib": 33.58,
-          "add_sec": 0.005,
-          "add_rate": 1831.5,
-          "add_loop_ms": 0,
+          "baseline_rss_mib": 30.13,
+          "add_sec": 0.004,
+          "add_rate": 245.9,
+          "add_loop_ms": 0.5,
           "add_lflow_ms": 0,
-          "peak_rss_mib": 34.63,
-          "del_sec": 0.006,
-          "del_loop_ms": 0.25,
-          "post_del_rss_mib": 34.27,
-          "retained_rss_mib": 0.69,
+          "peak_rss_mib": 30.46,
+          "del_sec": 0.005,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 29.77,
+          "retained_rss_mib": -0.36,
           "components": {
             "ovn-controller": {
-              "baseline_rss_mib": 5,
-              "peak_rss_mib": 5.42,
-              "post_del_rss_mib": 5.08,
-              "retained_rss_mib": 0.08
+              "baseline_rss_mib": 4.85,
+              "peak_rss_mib": 4.85,
+              "post_del_rss_mib": 4.43,
+              "retained_rss_mib": -0.42
             },
             "ovn-northd": {
-              "baseline_rss_mib": 6.73,
-              "peak_rss_mib": 7,
-              "post_del_rss_mib": 6.93,
-              "retained_rss_mib": 0.2
+              "baseline_rss_mib": 6.06,
+              "peak_rss_mib": 6.22,
+              "post_del_rss_mib": 6.14,
+              "retained_rss_mib": 0.08
             },
             "ovs-vswitchd": {
-              "baseline_rss_mib": 12.86,
-              "peak_rss_mib": 12.93,
-              "post_del_rss_mib": 12.97,
-              "retained_rss_mib": 0.11
+              "baseline_rss_mib": 12.39,
+              "peak_rss_mib": 12.44,
+              "post_del_rss_mib": 12.47,
+              "retained_rss_mib": 0.08
             },
             "ovsdb-nb": {
-              "baseline_rss_mib": 2.79,
-              "peak_rss_mib": 2.79,
-              "post_del_rss_mib": 2.79,
-              "retained_rss_mib": 0
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 2.09,
+              "post_del_rss_mib": 2,
+              "retained_rss_mib": -0.09
             },
             "ovsdb-ovs": {
-              "baseline_rss_mib": 2.8,
-              "peak_rss_mib": 2.8,
-              "post_del_rss_mib": 2.8,
-              "retained_rss_mib": 0
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 2.09,
+              "post_del_rss_mib": 2.08,
+              "retained_rss_mib": -0.01
             },
             "ovsdb-sb": {
-              "baseline_rss_mib": 3.4,
-              "peak_rss_mib": 3.69,
-              "post_del_rss_mib": 3.7,
-              "retained_rss_mib": 0.3
+              "baseline_rss_mib": 2.65,
+              "peak_rss_mib": 2.77,
+              "post_del_rss_mib": 2.65,
+              "retained_rss_mib": 0
             }
           }
         },
         "jemalloc": {
-          "baseline_rss_mib": 37.38,
-          "add_sec": 0.007,
-          "add_rate": 1424.5,
-          "add_loop_ms": 0,
+          "baseline_rss_mib": 34.08,
+          "add_sec": 0.004,
+          "add_rate": 228.6,
+          "add_loop_ms": 0.13,
           "add_lflow_ms": 1,
-          "peak_rss_mib": 38.25,
-          "del_sec": 0.006,
-          "del_loop_ms": 0.01,
-          "post_del_rss_mib": 37.87,
-          "retained_rss_mib": 0.49,
+          "peak_rss_mib": 34.67,
+          "del_sec": 0.005,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 34.49,
+          "retained_rss_mib": 0.41,
           "components": {
             "ovn-controller": {
-              "baseline_rss_mib": 5.76,
-              "peak_rss_mib": 6.25,
-              "post_del_rss_mib": 5.89,
+              "baseline_rss_mib": 5.25,
+              "peak_rss_mib": 5.61,
+              "post_del_rss_mib": 5.34,
+              "retained_rss_mib": 0.09
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 7.13,
+              "peak_rss_mib": 7.21,
+              "post_del_rss_mib": 7.2,
+              "retained_rss_mib": 0.07
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.95,
+              "peak_rss_mib": 14.03,
+              "post_del_rss_mib": 14.06,
+              "retained_rss_mib": 0.11
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.39,
+              "peak_rss_mib": 2.39,
+              "post_del_rss_mib": 2.41,
+              "retained_rss_mib": 0.02
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.47,
+              "peak_rss_mib": 2.47,
+              "post_del_rss_mib": 2.53,
+              "retained_rss_mib": 0.06
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.89,
+              "peak_rss_mib": 2.96,
+              "post_del_rss_mib": 2.95,
+              "retained_rss_mib": 0.06
+            }
+          }
+        }
+      },
+      "10": {
+        "glibc": {
+          "baseline_rss_mib": 30.11,
+          "add_sec": 0.005,
+          "add_rate": 2021.8,
+          "add_loop_ms": 0.13,
+          "add_lflow_ms": 1,
+          "peak_rss_mib": 30.68,
+          "del_sec": 0.005,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 29.96,
+          "retained_rss_mib": -0.15,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 4.85,
+              "peak_rss_mib": 4.85,
+              "post_del_rss_mib": 4.46,
+              "retained_rss_mib": -0.39
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.06,
+              "peak_rss_mib": 6.33,
+              "post_del_rss_mib": 6.22,
+              "retained_rss_mib": 0.16
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 12.39,
+              "peak_rss_mib": 12.46,
+              "post_del_rss_mib": 12.5,
+              "retained_rss_mib": 0.11
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.06,
+              "peak_rss_mib": 2.06,
+              "post_del_rss_mib": 2.02,
+              "retained_rss_mib": -0.04
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 2.09,
+              "post_del_rss_mib": 2.08,
+              "retained_rss_mib": -0.01
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.66,
+              "peak_rss_mib": 2.89,
+              "post_del_rss_mib": 2.68,
+              "retained_rss_mib": 0.02
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 34.07,
+          "add_sec": 0.006,
+          "add_rate": 1813.9,
+          "add_loop_ms": 0.01,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 34.97,
+          "del_sec": 0.005,
+          "del_loop_ms": 0.01,
+          "post_del_rss_mib": 34.62,
+          "retained_rss_mib": 0.55,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 5.24,
+              "peak_rss_mib": 5.7,
+              "post_del_rss_mib": 5.37,
               "retained_rss_mib": 0.13
             },
             "ovn-northd": {
-              "baseline_rss_mib": 7.68,
-              "peak_rss_mib": 7.83,
-              "post_del_rss_mib": 7.83,
-              "retained_rss_mib": 0.15
+              "baseline_rss_mib": 7.13,
+              "peak_rss_mib": 7.32,
+              "post_del_rss_mib": 7.24,
+              "retained_rss_mib": 0.11
             },
             "ovs-vswitchd": {
-              "baseline_rss_mib": 14.35,
-              "peak_rss_mib": 14.44,
-              "post_del_rss_mib": 14.48,
-              "retained_rss_mib": 0.13
+              "baseline_rss_mib": 13.95,
+              "peak_rss_mib": 14.05,
+              "post_del_rss_mib": 14.07,
+              "retained_rss_mib": 0.12
             },
             "ovsdb-nb": {
-              "baseline_rss_mib": 2.95,
-              "peak_rss_mib": 2.96,
-              "post_del_rss_mib": 2.96,
-              "retained_rss_mib": 0.01
+              "baseline_rss_mib": 2.39,
+              "peak_rss_mib": 2.4,
+              "post_del_rss_mib": 2.42,
+              "retained_rss_mib": 0.03
             },
             "ovsdb-ovs": {
-              "baseline_rss_mib": 3.05,
-              "peak_rss_mib": 3.05,
-              "post_del_rss_mib": 3.05,
-              "retained_rss_mib": 0
+              "baseline_rss_mib": 2.46,
+              "peak_rss_mib": 2.46,
+              "post_del_rss_mib": 2.53,
+              "retained_rss_mib": 0.07
             },
             "ovsdb-sb": {
-              "baseline_rss_mib": 3.59,
-              "peak_rss_mib": 3.72,
-              "post_del_rss_mib": 3.66,
-              "retained_rss_mib": 0.07
+              "baseline_rss_mib": 2.9,
+              "peak_rss_mib": 3.04,
+              "post_del_rss_mib": 2.99,
+              "retained_rss_mib": 0.09
             }
           }
         }
       },
       "100": {
         "glibc": {
-          "baseline_rss_mib": 33.99,
-          "add_sec": 0.009,
-          "add_rate": 10690.6,
-          "add_loop_ms": 0,
-          "add_lflow_ms": 1,
-          "peak_rss_mib": 38.7,
-          "del_sec": 0.007,
-          "del_loop_ms": 0.02,
-          "post_del_rss_mib": 36.94,
-          "retained_rss_mib": 2.95,
+          "baseline_rss_mib": 30.16,
+          "add_sec": 0.012,
+          "add_rate": 8576.3,
+          "add_loop_ms": 0.14,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 34.67,
+          "del_sec": 0.008,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 31.26,
+          "retained_rss_mib": 1.1,
           "components": {
             "ovn-controller": {
-              "baseline_rss_mib": 5.42,
-              "peak_rss_mib": 6.54,
-              "post_del_rss_mib": 5.36,
-              "retained_rss_mib": -0.06
+              "baseline_rss_mib": 4.86,
+              "peak_rss_mib": 5.9,
+              "post_del_rss_mib": 4.68,
+              "retained_rss_mib": -0.18
             },
             "ovn-northd": {
-              "baseline_rss_mib": 6.73,
-              "peak_rss_mib": 8,
-              "post_del_rss_mib": 7.31,
-              "retained_rss_mib": 0.58
+              "baseline_rss_mib": 6.05,
+              "peak_rss_mib": 7.32,
+              "post_del_rss_mib": 6.58,
+              "retained_rss_mib": 0.53
             },
             "ovs-vswitchd": {
-              "baseline_rss_mib": 12.85,
-              "peak_rss_mib": 13.2,
-              "post_del_rss_mib": 13.29,
+              "baseline_rss_mib": 12.4,
+              "peak_rss_mib": 12.74,
+              "post_del_rss_mib": 12.84,
               "retained_rss_mib": 0.44
             },
             "ovsdb-nb": {
-              "baseline_rss_mib": 2.79,
-              "peak_rss_mib": 3.13,
-              "post_del_rss_mib": 3.14,
-              "retained_rss_mib": 0.35
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 2.43,
+              "post_del_rss_mib": 2.16,
+              "retained_rss_mib": 0.07
             },
             "ovsdb-ovs": {
-              "baseline_rss_mib": 2.8,
-              "peak_rss_mib": 2.8,
-              "post_del_rss_mib": 2.8,
-              "retained_rss_mib": 0
+              "baseline_rss_mib": 2.1,
+              "peak_rss_mib": 2.1,
+              "post_del_rss_mib": 2.08,
+              "retained_rss_mib": -0.02
             },
             "ovsdb-sb": {
-              "baseline_rss_mib": 3.4,
-              "peak_rss_mib": 5.03,
-              "post_del_rss_mib": 5.04,
-              "retained_rss_mib": 1.64
+              "baseline_rss_mib": 2.66,
+              "peak_rss_mib": 4.18,
+              "post_del_rss_mib": 2.92,
+              "retained_rss_mib": 0.26
             }
           }
         },
         "jemalloc": {
-          "baseline_rss_mib": 37.35,
-          "add_sec": 0.009,
-          "add_rate": 10819,
-          "add_loop_ms": 0.13,
+          "baseline_rss_mib": 34.08,
+          "add_sec": 0.01,
+          "add_rate": 9635.8,
+          "add_loop_ms": 0.51,
           "add_lflow_ms": 0,
-          "peak_rss_mib": 41.35,
+          "peak_rss_mib": 37.87,
           "del_sec": 0.006,
-          "del_loop_ms": 0,
-          "post_del_rss_mib": 38.97,
+          "del_loop_ms": 0.25,
+          "post_del_rss_mib": 35.7,
           "retained_rss_mib": 1.62,
           "components": {
             "ovn-controller": {
-              "baseline_rss_mib": 5.77,
-              "peak_rss_mib": 7.44,
-              "post_del_rss_mib": 6.11,
-              "retained_rss_mib": 0.34
+              "baseline_rss_mib": 5.25,
+              "peak_rss_mib": 6.92,
+              "post_del_rss_mib": 5.57,
+              "retained_rss_mib": 0.32
             },
             "ovn-northd": {
-              "baseline_rss_mib": 7.69,
-              "peak_rss_mib": 8.51,
-              "post_del_rss_mib": 8.11,
-              "retained_rss_mib": 0.42
+              "baseline_rss_mib": 7.06,
+              "peak_rss_mib": 7.92,
+              "post_del_rss_mib": 7.53,
+              "retained_rss_mib": 0.47
             },
             "ovs-vswitchd": {
-              "baseline_rss_mib": 14.34,
-              "peak_rss_mib": 14.64,
-              "post_del_rss_mib": 14.72,
-              "retained_rss_mib": 0.38
+              "baseline_rss_mib": 13.95,
+              "peak_rss_mib": 14.27,
+              "post_del_rss_mib": 14.32,
+              "retained_rss_mib": 0.37
             },
             "ovsdb-nb": {
-              "baseline_rss_mib": 2.95,
-              "peak_rss_mib": 3.18,
-              "post_del_rss_mib": 3.17,
-              "retained_rss_mib": 0.22
+              "baseline_rss_mib": 2.4,
+              "peak_rss_mib": 2.6,
+              "post_del_rss_mib": 2.61,
+              "retained_rss_mib": 0.21
             },
             "ovsdb-ovs": {
-              "baseline_rss_mib": 3.05,
-              "peak_rss_mib": 3.05,
-              "post_del_rss_mib": 3.06,
-              "retained_rss_mib": 0.01
+              "baseline_rss_mib": 2.48,
+              "peak_rss_mib": 2.48,
+              "post_del_rss_mib": 2.54,
+              "retained_rss_mib": 0.06
             },
             "ovsdb-sb": {
-              "baseline_rss_mib": 3.55,
-              "peak_rss_mib": 4.53,
-              "post_del_rss_mib": 3.8,
-              "retained_rss_mib": 0.25
+              "baseline_rss_mib": 2.94,
+              "peak_rss_mib": 3.68,
+              "post_del_rss_mib": 3.13,
+              "retained_rss_mib": 0.19
             }
           }
         }
       },
-      "1000": {},
-      "10000": {}
-    },
-    "address_set": {
-      "1": {},
-      "10": {},
-      "100": {},
-      "1000": {},
-      "10000": {}
-    },
-    "combined": {
-      "1": {},
-      "10": {
+      "1000": {
         "glibc": {
-          "baseline_rss_mib": 28.97,
-          "add_sec": 0.015,
-          "add_rate": 684.4,
-          "add_loop_ms": 0,
-          "add_lflow_ms": 1,
-          "peak_rss_mib": 34.05,
-          "del_sec": 0.009,
-          "del_loop_ms": 0,
-          "post_del_rss_mib": 32.31,
-          "retained_rss_mib": 3.34,
+          "baseline_rss_mib": 30.15,
+          "add_sec": 0.072,
+          "add_rate": 13794.8,
+          "add_loop_ms": 0.04,
+          "add_lflow_ms": 4,
+          "peak_rss_mib": 68.1,
+          "del_sec": 0.03,
+          "del_loop_ms": 0.52,
+          "post_del_rss_mib": 36.86,
+          "retained_rss_mib": 6.71,
           "components": {
             "ovn-controller": {
-              "baseline_rss_mib": 2.55,
-              "peak_rss_mib": 4.98,
-              "post_del_rss_mib": 3.47,
-              "retained_rss_mib": 0.92
+              "baseline_rss_mib": 4.85,
+              "peak_rss_mib": 16.75,
+              "post_del_rss_mib": 5.26,
+              "retained_rss_mib": 0.41
             },
             "ovn-northd": {
-              "baseline_rss_mib": 5.21,
-              "peak_rss_mib": 5.99,
-              "post_del_rss_mib": 5.43,
-              "retained_rss_mib": 0.22
+              "baseline_rss_mib": 6.06,
+              "peak_rss_mib": 15.81,
+              "post_del_rss_mib": 7.32,
+              "retained_rss_mib": 1.26
             },
             "ovs-vswitchd": {
-              "baseline_rss_mib": 15.43,
-              "peak_rss_mib": 16.25,
-              "post_del_rss_mib": 16.58,
-              "retained_rss_mib": 1.15
+              "baseline_rss_mib": 12.39,
+              "peak_rss_mib": 15.14,
+              "post_del_rss_mib": 15.9,
+              "retained_rss_mib": 3.51
             },
             "ovsdb-nb": {
-              "baseline_rss_mib": 1.69,
-              "peak_rss_mib": 1.69,
-              "post_del_rss_mib": 1.69,
-              "retained_rss_mib": 0
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 4.65,
+              "post_del_rss_mib": 2.81,
+              "retained_rss_mib": 0.72
             },
             "ovsdb-ovs": {
-              "baseline_rss_mib": 1.89,
-              "peak_rss_mib": 1.92,
-              "post_del_rss_mib": 1.92,
-              "retained_rss_mib": 0.03
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 2.09,
+              "post_del_rss_mib": 2.09,
+              "retained_rss_mib": 0
             },
             "ovsdb-sb": {
-              "baseline_rss_mib": 2.2,
-              "peak_rss_mib": 3.22,
-              "post_del_rss_mib": 3.22,
-              "retained_rss_mib": 1.02
+              "baseline_rss_mib": 2.67,
+              "peak_rss_mib": 13.66,
+              "post_del_rss_mib": 3.48,
+              "retained_rss_mib": 0.81
             }
           }
         },
         "jemalloc": {
-          "baseline_rss_mib": 34.25,
-          "add_sec": 0.012,
-          "add_rate": 839.9,
-          "add_loop_ms": 0,
-          "add_lflow_ms": 1,
-          "peak_rss_mib": 39.79,
-          "del_sec": 0.008,
-          "del_loop_ms": 0.53,
-          "post_del_rss_mib": 38.11,
-          "retained_rss_mib": 3.86,
+          "baseline_rss_mib": 34.1,
+          "add_sec": 0.126,
+          "add_rate": 7911,
+          "add_loop_ms": 0.05,
+          "add_lflow_ms": 5,
+          "peak_rss_mib": 62.66,
+          "del_sec": 0.033,
+          "del_loop_ms": 0.02,
+          "post_del_rss_mib": 38.94,
+          "retained_rss_mib": 4.84,
           "components": {
             "ovn-controller": {
-              "baseline_rss_mib": 3.21,
-              "peak_rss_mib": 5.86,
-              "post_del_rss_mib": 4.56,
-              "retained_rss_mib": 1.35
+              "baseline_rss_mib": 5.25,
+              "peak_rss_mib": 18.57,
+              "post_del_rss_mib": 6.54,
+              "retained_rss_mib": 1.29
             },
             "ovn-northd": {
-              "baseline_rss_mib": 6.13,
-              "peak_rss_mib": 6.98,
-              "post_del_rss_mib": 6.75,
-              "retained_rss_mib": 0.62
+              "baseline_rss_mib": 7.13,
+              "peak_rss_mib": 14.07,
+              "post_del_rss_mib": 8.38,
+              "retained_rss_mib": 1.25
             },
             "ovs-vswitchd": {
-              "baseline_rss_mib": 18.81,
-              "peak_rss_mib": 19.77,
-              "post_del_rss_mib": 20,
-              "retained_rss_mib": 1.19
+              "baseline_rss_mib": 13.95,
+              "peak_rss_mib": 14.83,
+              "post_del_rss_mib": 14.89,
+              "retained_rss_mib": 0.94
             },
             "ovsdb-nb": {
-              "baseline_rss_mib": 1.93,
-              "peak_rss_mib": 1.96,
-              "post_del_rss_mib": 1.96,
-              "retained_rss_mib": 0.03
+              "baseline_rss_mib": 2.4,
+              "peak_rss_mib": 4.14,
+              "post_del_rss_mib": 3.11,
+              "retained_rss_mib": 0.71
             },
             "ovsdb-ovs": {
-              "baseline_rss_mib": 1.96,
-              "peak_rss_mib": 2.1,
-              "post_del_rss_mib": 2.11,
-              "retained_rss_mib": 0.15
+              "baseline_rss_mib": 2.47,
+              "peak_rss_mib": 2.47,
+              "post_del_rss_mib": 2.53,
+              "retained_rss_mib": 0.06
             },
             "ovsdb-sb": {
-              "baseline_rss_mib": 2.21,
-              "peak_rss_mib": 3.12,
-              "post_del_rss_mib": 2.73,
-              "retained_rss_mib": 0.52
+              "baseline_rss_mib": 2.9,
+              "peak_rss_mib": 8.58,
+              "post_del_rss_mib": 3.49,
+              "retained_rss_mib": 0.59
             }
           }
         }
       },
-      "100": {},
-      "1000": {},
-      "10000": {}
-    },
-    "flow": {
-      "1": {},
-      "10": {
+      "10000": {
         "glibc": {
-          "baseline_rss_mib": 27.45,
+          "baseline_rss_mib": 30.14,
+          "add_sec": 1.072,
+          "add_rate": 9327.5,
+          "add_loop_ms": 1.72,
+          "add_lflow_ms": 97,
+          "peak_rss_mib": 376.41,
+          "del_sec": 0.732,
+          "del_loop_ms": 0.02,
+          "post_del_rss_mib": 65.92,
+          "retained_rss_mib": 35.78,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 4.85,
+              "peak_rss_mib": 124.61,
+              "post_del_rss_mib": 5.86,
+              "retained_rss_mib": 1.01
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.06,
+              "peak_rss_mib": 96.14,
+              "post_del_rss_mib": 7.77,
+              "retained_rss_mib": 1.71
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 12.39,
+              "peak_rss_mib": 33,
+              "post_del_rss_mib": 43.1,
+              "retained_rss_mib": 30.71
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 25.3,
+              "post_del_rss_mib": 3.18,
+              "retained_rss_mib": 1.09
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 2.09,
+              "post_del_rss_mib": 2.08,
+              "retained_rss_mib": -0.01
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.66,
+              "peak_rss_mib": 95.27,
+              "post_del_rss_mib": 3.93,
+              "retained_rss_mib": 1.27
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 34.07,
+          "add_sec": 0.802,
+          "add_rate": 12467.9,
+          "add_loop_ms": 1.54,
+          "add_lflow_ms": 90,
+          "peak_rss_mib": 300.8,
+          "del_sec": 0.386,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 47.24,
+          "retained_rss_mib": 13.17,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 5.25,
+              "peak_rss_mib": 126.07,
+              "post_del_rss_mib": 10.43,
+              "retained_rss_mib": 5.18
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 7.11,
+              "peak_rss_mib": 74.56,
+              "post_del_rss_mib": 9.63,
+              "retained_rss_mib": 2.52
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.96,
+              "peak_rss_mib": 19.31,
+              "post_del_rss_mib": 15.52,
+              "retained_rss_mib": 1.56
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.39,
+              "peak_rss_mib": 18.12,
+              "post_del_rss_mib": 3.85,
+              "retained_rss_mib": 1.46
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.47,
+              "peak_rss_mib": 2.47,
+              "post_del_rss_mib": 2.54,
+              "retained_rss_mib": 0.07
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.89,
+              "peak_rss_mib": 60.27,
+              "post_del_rss_mib": 5.27,
+              "retained_rss_mib": 2.38
+            }
+          }
+        }
+      }
+    },
+    "address_set": {
+      "1": {
+        "glibc": {
+          "baseline_rss_mib": 30.14,
           "add_sec": 0.005,
-          "add_rate": 2039.6,
+          "add_rate": 207.4,
           "add_loop_ms": 0,
           "add_lflow_ms": 0,
-          "peak_rss_mib": 27.57,
+          "peak_rss_mib": 30.48,
+          "del_sec": 0.005,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 29.81,
+          "retained_rss_mib": -0.33,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 4.84,
+              "peak_rss_mib": 4.84,
+              "post_del_rss_mib": 4.43,
+              "retained_rss_mib": -0.41
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.05,
+              "peak_rss_mib": 6.22,
+              "post_del_rss_mib": 6.17,
+              "retained_rss_mib": 0.12
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 12.39,
+              "peak_rss_mib": 12.44,
+              "post_del_rss_mib": 12.47,
+              "retained_rss_mib": 0.08
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.1,
+              "peak_rss_mib": 2.1,
+              "post_del_rss_mib": 2.01,
+              "retained_rss_mib": -0.09
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.1,
+              "peak_rss_mib": 2.1,
+              "post_del_rss_mib": 2.09,
+              "retained_rss_mib": -0.01
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.66,
+              "peak_rss_mib": 2.78,
+              "post_del_rss_mib": 2.64,
+              "retained_rss_mib": -0.02
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 34.11,
+          "add_sec": 0.005,
+          "add_rate": 201.5,
+          "add_loop_ms": 0.06,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 34.72,
+          "del_sec": 0.005,
+          "del_loop_ms": 0.01,
+          "post_del_rss_mib": 34.54,
+          "retained_rss_mib": 0.43,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 5.25,
+              "peak_rss_mib": 5.62,
+              "post_del_rss_mib": 5.36,
+              "retained_rss_mib": 0.11
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 7.12,
+              "peak_rss_mib": 7.24,
+              "post_del_rss_mib": 7.2,
+              "retained_rss_mib": 0.08
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.98,
+              "peak_rss_mib": 14.05,
+              "post_del_rss_mib": 14.09,
+              "retained_rss_mib": 0.11
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.39,
+              "peak_rss_mib": 2.39,
+              "post_del_rss_mib": 2.41,
+              "retained_rss_mib": 0.02
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.47,
+              "peak_rss_mib": 2.47,
+              "post_del_rss_mib": 2.53,
+              "retained_rss_mib": 0.06
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.9,
+              "peak_rss_mib": 2.95,
+              "post_del_rss_mib": 2.95,
+              "retained_rss_mib": 0.05
+            }
+          }
+        }
+      },
+      "10": {
+        "glibc": {
+          "baseline_rss_mib": 30.14,
+          "add_sec": 0.005,
+          "add_rate": 1954.3,
+          "add_loop_ms": 0.5,
+          "add_lflow_ms": 1,
+          "peak_rss_mib": 30.51,
+          "del_sec": 0.005,
+          "del_loop_ms": 0.51,
+          "post_del_rss_mib": 29.86,
+          "retained_rss_mib": -0.28,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 4.85,
+              "peak_rss_mib": 4.85,
+              "post_del_rss_mib": 4.47,
+              "retained_rss_mib": -0.38
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.06,
+              "peak_rss_mib": 6.23,
+              "post_del_rss_mib": 6.16,
+              "retained_rss_mib": 0.1
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 12.39,
+              "peak_rss_mib": 12.46,
+              "post_del_rss_mib": 12.49,
+              "retained_rss_mib": 0.1
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.1,
+              "peak_rss_mib": 2.1,
+              "post_del_rss_mib": 2,
+              "retained_rss_mib": -0.1
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 2.09,
+              "post_del_rss_mib": 2.08,
+              "retained_rss_mib": -0.01
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.65,
+              "peak_rss_mib": 2.78,
+              "post_del_rss_mib": 2.66,
+              "retained_rss_mib": 0.01
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 34,
+          "add_sec": 0.005,
+          "add_rate": 1967.7,
+          "add_loop_ms": 0.13,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 34.66,
+          "del_sec": 0.005,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 34.52,
+          "retained_rss_mib": 0.52,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 5.23,
+              "peak_rss_mib": 5.63,
+              "post_del_rss_mib": 5.35,
+              "retained_rss_mib": 0.12
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 7.05,
+              "peak_rss_mib": 7.18,
+              "post_del_rss_mib": 7.19,
+              "retained_rss_mib": 0.14
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.96,
+              "peak_rss_mib": 14.06,
+              "post_del_rss_mib": 14.09,
+              "retained_rss_mib": 0.13
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.39,
+              "peak_rss_mib": 2.39,
+              "post_del_rss_mib": 2.41,
+              "retained_rss_mib": 0.02
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.48,
+              "peak_rss_mib": 2.48,
+              "post_del_rss_mib": 2.54,
+              "retained_rss_mib": 0.06
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.89,
+              "peak_rss_mib": 2.92,
+              "post_del_rss_mib": 2.94,
+              "retained_rss_mib": 0.05
+            }
+          }
+        }
+      },
+      "100": {
+        "glibc": {
+          "baseline_rss_mib": 29.68,
+          "add_sec": 0.004,
+          "add_rate": 24709.7,
+          "add_loop_ms": 0.5,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 30.91,
           "del_sec": 0.004,
           "del_loop_ms": 0,
-          "post_del_rss_mib": 27.51,
-          "retained_rss_mib": 0.06,
+          "post_del_rss_mib": 30.18,
+          "retained_rss_mib": 0.5,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 4.4,
+              "peak_rss_mib": 5.02,
+              "post_del_rss_mib": 4.5,
+              "retained_rss_mib": 0.1
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.06,
+              "peak_rss_mib": 6.24,
+              "post_del_rss_mib": 6.18,
+              "retained_rss_mib": 0.12
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 12.39,
+              "peak_rss_mib": 12.68,
+              "post_del_rss_mib": 12.76,
+              "retained_rss_mib": 0.37
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 2.09,
+              "post_del_rss_mib": 2,
+              "retained_rss_mib": -0.09
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 2.09,
+              "post_del_rss_mib": 2.09,
+              "retained_rss_mib": 0
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.65,
+              "peak_rss_mib": 2.79,
+              "post_del_rss_mib": 2.65,
+              "retained_rss_mib": 0
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 34.04,
+          "add_sec": 0.005,
+          "add_rate": 19677.3,
+          "add_loop_ms": 0.02,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 35.13,
+          "del_sec": 0.005,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 34.95,
+          "retained_rss_mib": 0.91,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 5.23,
+              "peak_rss_mib": 5.84,
+              "post_del_rss_mib": 5.53,
+              "retained_rss_mib": 0.3
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 7.09,
+              "peak_rss_mib": 7.25,
+              "post_del_rss_mib": 7.2,
+              "retained_rss_mib": 0.11
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.96,
+              "peak_rss_mib": 14.24,
+              "post_del_rss_mib": 14.33,
+              "retained_rss_mib": 0.37
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.4,
+              "peak_rss_mib": 2.4,
+              "post_del_rss_mib": 2.42,
+              "retained_rss_mib": 0.02
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.48,
+              "peak_rss_mib": 2.48,
+              "post_del_rss_mib": 2.54,
+              "retained_rss_mib": 0.06
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.88,
+              "peak_rss_mib": 2.92,
+              "post_del_rss_mib": 2.93,
+              "retained_rss_mib": 0.05
+            }
+          }
+        }
+      },
+      "1000": {
+        "glibc": {
+          "baseline_rss_mib": 30.11,
+          "add_sec": 0.006,
+          "add_rate": 158353.1,
+          "add_loop_ms": 0.01,
+          "add_lflow_ms": 1,
+          "peak_rss_mib": 38.17,
+          "del_sec": 0.004,
+          "del_loop_ms": 0.52,
+          "post_del_rss_mib": 32.94,
+          "retained_rss_mib": 2.83,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 4.86,
+              "peak_rss_mib": 9.73,
+              "post_del_rss_mib": 4.56,
+              "retained_rss_mib": -0.3
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.06,
+              "peak_rss_mib": 6.38,
+              "post_del_rss_mib": 6.26,
+              "retained_rss_mib": 0.2
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 12.39,
+              "peak_rss_mib": 15.02,
+              "post_del_rss_mib": 15.33,
+              "retained_rss_mib": 2.94
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.06,
+              "peak_rss_mib": 2.07,
+              "post_del_rss_mib": 2.02,
+              "retained_rss_mib": -0.04
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 2.09,
+              "post_del_rss_mib": 2.08,
+              "retained_rss_mib": -0.01
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.65,
+              "peak_rss_mib": 2.88,
+              "post_del_rss_mib": 2.69,
+              "retained_rss_mib": 0.04
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 34.04,
+          "add_sec": 0.006,
+          "add_rate": 160102.5,
+          "add_loop_ms": 0.02,
+          "add_lflow_ms": 1,
+          "peak_rss_mib": 38.52,
+          "del_sec": 0.004,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 35.87,
+          "retained_rss_mib": 1.83,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 5.25,
+              "peak_rss_mib": 7.68,
+              "post_del_rss_mib": 5.9,
+              "retained_rss_mib": 0.65
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 7.07,
+              "peak_rss_mib": 7.35,
+              "post_del_rss_mib": 7.29,
+              "retained_rss_mib": 0.22
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.95,
+              "peak_rss_mib": 15.51,
+              "post_del_rss_mib": 14.64,
+              "retained_rss_mib": 0.69
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.4,
+              "peak_rss_mib": 2.45,
+              "post_del_rss_mib": 2.48,
+              "retained_rss_mib": 0.08
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.47,
+              "peak_rss_mib": 2.47,
+              "post_del_rss_mib": 2.54,
+              "retained_rss_mib": 0.07
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.9,
+              "peak_rss_mib": 3.06,
+              "post_del_rss_mib": 3.02,
+              "retained_rss_mib": 0.12
+            }
+          }
+        }
+      },
+      "10000": {
+        "glibc": {
+          "baseline_rss_mib": 30.15,
+          "add_sec": 0.03,
+          "add_rate": 332634.8,
+          "add_loop_ms": 0.03,
+          "add_lflow_ms": 1,
+          "peak_rss_mib": 49.34,
+          "del_sec": 0.006,
+          "del_loop_ms": 0.52,
+          "post_del_rss_mib": 58.94,
+          "retained_rss_mib": 28.79,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 4.86,
+              "peak_rss_mib": 20.66,
+              "post_del_rss_mib": 4.82,
+              "retained_rss_mib": -0.04
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.05,
+              "peak_rss_mib": 7.65,
+              "post_del_rss_mib": 6.32,
+              "retained_rss_mib": 0.27
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 12.4,
+              "peak_rss_mib": 12.4,
+              "post_del_rss_mib": 40.93,
+              "retained_rss_mib": 28.53
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.1,
+              "peak_rss_mib": 2.79,
+              "post_del_rss_mib": 2.02,
+              "retained_rss_mib": -0.08
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 2.09,
+              "post_del_rss_mib": 2.09,
+              "retained_rss_mib": 0
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.65,
+              "peak_rss_mib": 3.75,
+              "post_del_rss_mib": 2.76,
+              "retained_rss_mib": 0.11
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 34.06,
+          "add_sec": 0.02,
+          "add_rate": 506688.3,
+          "add_loop_ms": 0.01,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 57.37,
+          "del_sec": 0.005,
+          "del_loop_ms": 0.03,
+          "post_del_rss_mib": 37.39,
+          "retained_rss_mib": 3.33,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 5.26,
+              "peak_rss_mib": 25.77,
+              "post_del_rss_mib": 7.37,
+              "retained_rss_mib": 2.11
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 7.07,
+              "peak_rss_mib": 8.66,
+              "post_del_rss_mib": 7.29,
+              "retained_rss_mib": 0.22
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.96,
+              "peak_rss_mib": 13.96,
+              "post_del_rss_mib": 14.74,
+              "retained_rss_mib": 0.78
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.4,
+              "peak_rss_mib": 2.99,
+              "post_del_rss_mib": 2.49,
+              "retained_rss_mib": 0.09
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.47,
+              "peak_rss_mib": 2.47,
+              "post_del_rss_mib": 2.54,
+              "retained_rss_mib": 0.07
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.9,
+              "peak_rss_mib": 3.52,
+              "post_del_rss_mib": 2.96,
+              "retained_rss_mib": 0.06
+            }
+          }
+        }
+      }
+    },
+    "combined": {
+      "1": {
+        "glibc": {
+          "baseline_rss_mib": 27.5,
+          "add_sec": 0.011,
+          "add_rate": 89.9,
+          "add_loop_ms": 0,
+          "add_lflow_ms": 1,
+          "peak_rss_mib": 31.26,
+          "del_sec": 0.009,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 29.25,
+          "retained_rss_mib": 1.75,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.03,
+              "peak_rss_mib": 5.27,
+              "post_del_rss_mib": 4,
+              "retained_rss_mib": 0.97
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 5.92,
+              "peak_rss_mib": 6.37,
+              "post_del_rss_mib": 6.14,
+              "retained_rss_mib": 0.22
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 11.77,
+              "peak_rss_mib": 12.37,
+              "post_del_rss_mib": 12.61,
+              "retained_rss_mib": 0.84
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.1,
+              "peak_rss_mib": 2.1,
+              "post_del_rss_mib": 1.97,
+              "retained_rss_mib": -0.13
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.03,
+              "peak_rss_mib": 2.03,
+              "post_del_rss_mib": 1.94,
+              "retained_rss_mib": -0.09
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.65,
+              "peak_rss_mib": 3.12,
+              "post_del_rss_mib": 2.59,
+              "retained_rss_mib": -0.06
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 31.45,
+          "add_sec": 0.012,
+          "add_rate": 80.4,
+          "add_loop_ms": 0,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 35.47,
+          "del_sec": 0.009,
+          "del_loop_ms": 0.01,
+          "post_del_rss_mib": 33.61,
+          "retained_rss_mib": 2.16,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.88,
+              "peak_rss_mib": 6.27,
+              "post_del_rss_mib": 4.65,
+              "retained_rss_mib": 0.77
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.84,
+              "peak_rss_mib": 7.35,
+              "post_del_rss_mib": 7.16,
+              "retained_rss_mib": 0.32
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.35,
+              "peak_rss_mib": 13.95,
+              "post_del_rss_mib": 14.16,
+              "retained_rss_mib": 0.81
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.37,
+              "peak_rss_mib": 2.36,
+              "post_del_rss_mib": 2.38,
+              "retained_rss_mib": 0.01
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.33,
+              "peak_rss_mib": 2.35,
+              "post_del_rss_mib": 2.4,
+              "retained_rss_mib": 0.07
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.68,
+              "peak_rss_mib": 3.19,
+              "post_del_rss_mib": 2.86,
+              "retained_rss_mib": 0.18
+            }
+          }
+        }
+      },
+      "10": {
+        "glibc": {
+          "baseline_rss_mib": 27.34,
+          "add_sec": 0.014,
+          "add_rate": 715.5,
+          "add_loop_ms": 0.02,
+          "add_lflow_ms": 1,
+          "peak_rss_mib": 32.85,
+          "del_sec": 0.011,
+          "del_loop_ms": 0.04,
+          "post_del_rss_mib": 30.57,
+          "retained_rss_mib": 3.23,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.03,
+              "peak_rss_mib": 5.83,
+              "post_del_rss_mib": 4.47,
+              "retained_rss_mib": 1.44
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 5.93,
+              "peak_rss_mib": 6.68,
+              "post_del_rss_mib": 6.27,
+              "retained_rss_mib": 0.34
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 11.77,
+              "peak_rss_mib": 12.66,
+              "post_del_rss_mib": 12.91,
+              "retained_rss_mib": 1.14
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.06,
+              "peak_rss_mib": 2.06,
+              "post_del_rss_mib": 2.03,
+              "retained_rss_mib": -0.03
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.04,
+              "peak_rss_mib": 2.1,
+              "post_del_rss_mib": 2.07,
+              "retained_rss_mib": 0.03
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.51,
+              "peak_rss_mib": 3.52,
+              "post_del_rss_mib": 2.82,
+              "retained_rss_mib": 0.31
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 31.47,
+          "add_sec": 0.014,
+          "add_rate": 703.8,
+          "add_loop_ms": 0.13,
+          "add_lflow_ms": 1,
+          "peak_rss_mib": 37.44,
+          "del_sec": 0.01,
+          "del_loop_ms": 0.01,
+          "post_del_rss_mib": 34.65,
+          "retained_rss_mib": 3.18,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.89,
+              "peak_rss_mib": 6.98,
+              "post_del_rss_mib": 4.88,
+              "retained_rss_mib": 0.99
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.84,
+              "peak_rss_mib": 7.7,
+              "post_del_rss_mib": 7.42,
+              "retained_rss_mib": 0.58
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.36,
+              "peak_rss_mib": 14.41,
+              "post_del_rss_mib": 14.46,
+              "retained_rss_mib": 1.1
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.38,
+              "peak_rss_mib": 2.41,
+              "post_del_rss_mib": 2.43,
+              "retained_rss_mib": 0.05
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.33,
+              "peak_rss_mib": 2.46,
+              "post_del_rss_mib": 2.51,
+              "retained_rss_mib": 0.18
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.67,
+              "peak_rss_mib": 3.48,
+              "post_del_rss_mib": 2.95,
+              "retained_rss_mib": 0.28
+            }
+          }
+        }
+      },
+      "100": {
+        "glibc": {
+          "baseline_rss_mib": 27.69,
+          "add_sec": 0.038,
+          "add_rate": 2659.9,
+          "add_loop_ms": 0.04,
+          "add_lflow_ms": 1,
+          "peak_rss_mib": 48.88,
+          "del_sec": 0.023,
+          "del_loop_ms": 0.5,
+          "post_del_rss_mib": 38.66,
+          "retained_rss_mib": 10.97,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.05,
+              "peak_rss_mib": 8.73,
+              "post_del_rss_mib": 6.15,
+              "retained_rss_mib": 3.1
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.01,
+              "peak_rss_mib": 9.67,
+              "post_del_rss_mib": 6.89,
+              "retained_rss_mib": 0.88
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 11.76,
+              "peak_rss_mib": 16.21,
+              "post_del_rss_mib": 16.86,
+              "retained_rss_mib": 5.1
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.02,
+              "peak_rss_mib": 2.67,
+              "post_del_rss_mib": 2.41,
+              "retained_rss_mib": 0.39
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.04,
+              "peak_rss_mib": 3.99,
+              "post_del_rss_mib": 3.06,
+              "retained_rss_mib": 1.02
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.81,
+              "peak_rss_mib": 7.61,
+              "post_del_rss_mib": 3.29,
+              "retained_rss_mib": 0.48
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 31.48,
+          "add_sec": 0.038,
+          "add_rate": 2615.1,
+          "add_loop_ms": 0.02,
+          "add_lflow_ms": 1,
+          "peak_rss_mib": 49.87,
+          "del_sec": 0.019,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 37.94,
+          "retained_rss_mib": 6.46,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.89,
+              "peak_rss_mib": 10.82,
+              "post_del_rss_mib": 5.7,
+              "retained_rss_mib": 1.81
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.83,
+              "peak_rss_mib": 9.88,
+              "post_del_rss_mib": 7.87,
+              "retained_rss_mib": 1.04
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.36,
+              "peak_rss_mib": 16.96,
+              "post_del_rss_mib": 15.91,
+              "retained_rss_mib": 2.55
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.38,
+              "peak_rss_mib": 2.97,
+              "post_del_rss_mib": 2.69,
+              "retained_rss_mib": 0.31
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.34,
+              "peak_rss_mib": 3.58,
+              "post_del_rss_mib": 2.77,
+              "retained_rss_mib": 0.43
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.68,
+              "peak_rss_mib": 5.66,
+              "post_del_rss_mib": 3,
+              "retained_rss_mib": 0.32
+            }
+          }
+        }
+      },
+      "1000": {
+        "glibc": {
+          "baseline_rss_mib": 27.38,
+          "add_sec": 0.66,
+          "add_rate": 1516.1,
+          "add_loop_ms": 0.3,
+          "add_lflow_ms": 10,
+          "peak_rss_mib": 175.43,
+          "del_sec": 0.425,
+          "del_loop_ms": 0.14,
+          "post_del_rss_mib": 70.13,
+          "retained_rss_mib": 42.75,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.04,
+              "peak_rss_mib": 59.91,
+              "post_del_rss_mib": 11.4,
+              "retained_rss_mib": 8.36
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 5.92,
+              "peak_rss_mib": 34.73,
+              "post_del_rss_mib": 8.95,
+              "retained_rss_mib": 3.03
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 11.76,
+              "peak_rss_mib": 28.36,
+              "post_del_rss_mib": 29.37,
+              "retained_rss_mib": 17.61
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.1,
+              "peak_rss_mib": 7.21,
+              "post_del_rss_mib": 3.2,
+              "retained_rss_mib": 1.1
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.04,
+              "peak_rss_mib": 14.95,
+              "post_del_rss_mib": 12,
+              "retained_rss_mib": 9.96
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.52,
+              "peak_rss_mib": 30.27,
+              "post_del_rss_mib": 5.21,
+              "retained_rss_mib": 2.69
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 31.44,
+          "add_sec": 0.66,
+          "add_rate": 1515.8,
+          "add_loop_ms": 0.63,
+          "add_lflow_ms": 10,
+          "peak_rss_mib": 164.82,
+          "del_sec": 0.301,
+          "del_loop_ms": 0.02,
+          "post_del_rss_mib": 45.19,
+          "retained_rss_mib": 13.75,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.89,
+              "peak_rss_mib": 66.19,
+              "post_del_rss_mib": 7.72,
+              "retained_rss_mib": 3.83
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.83,
+              "peak_rss_mib": 30.52,
+              "post_del_rss_mib": 9.52,
+              "retained_rss_mib": 2.69
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.35,
+              "peak_rss_mib": 26.8,
+              "post_del_rss_mib": 18.04,
+              "retained_rss_mib": 4.69
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.37,
+              "peak_rss_mib": 6.29,
+              "post_del_rss_mib": 3.07,
+              "retained_rss_mib": 0.7
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.34,
+              "peak_rss_mib": 11.84,
+              "post_del_rss_mib": 2.76,
+              "retained_rss_mib": 0.42
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.66,
+              "peak_rss_mib": 23.18,
+              "post_del_rss_mib": 4.08,
+              "retained_rss_mib": 1.42
+            }
+          }
+        }
+      },
+      "10000": {
+        "glibc": {
+          "baseline_rss_mib": 27.47,
+          "add_sec": 72.279,
+          "add_rate": 138.4,
+          "add_loop_ms": 3.63,
+          "add_lflow_ms": 111,
+          "peak_rss_mib": 1313.13,
+          "del_sec": 16.807,
+          "del_loop_ms": 0.08,
+          "post_del_rss_mib": 572.47,
+          "retained_rss_mib": 545,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.03,
+              "peak_rss_mib": 450,
+              "post_del_rss_mib": 300.64,
+              "retained_rss_mib": 297.61
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 5.91,
+              "peak_rss_mib": 294.05,
+              "post_del_rss_mib": 12.55,
+              "retained_rss_mib": 6.64
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 11.76,
+              "peak_rss_mib": 118.29,
+              "post_del_rss_mib": 129.31,
+              "retained_rss_mib": 117.55
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 49.72,
+              "post_del_rss_mib": 5.19,
+              "retained_rss_mib": 3.1
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.04,
+              "peak_rss_mib": 118.13,
+              "post_del_rss_mib": 110.6,
+              "retained_rss_mib": 108.56
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.64,
+              "peak_rss_mib": 282.94,
+              "post_del_rss_mib": 14.18,
+              "retained_rss_mib": 11.54
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 31.43,
+          "add_sec": 69.65,
+          "add_rate": 143.6,
+          "add_loop_ms": 5.66,
+          "add_lflow_ms": 102,
+          "peak_rss_mib": 1144.38,
+          "del_sec": 13.724,
+          "del_loop_ms": 0.03,
+          "post_del_rss_mib": 292.43,
+          "retained_rss_mib": 261,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.89,
+              "peak_rss_mib": 459.4,
+              "post_del_rss_mib": 148.25,
+              "retained_rss_mib": 144.36
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.8,
+              "peak_rss_mib": 235.89,
+              "post_del_rss_mib": 13.86,
+              "retained_rss_mib": 7.06
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.36,
+              "peak_rss_mib": 123.85,
+              "post_del_rss_mib": 107.41,
+              "retained_rss_mib": 94.05
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.37,
+              "peak_rss_mib": 39.39,
+              "post_del_rss_mib": 4.56,
+              "retained_rss_mib": 2.19
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.35,
+              "peak_rss_mib": 84.52,
+              "post_del_rss_mib": 6.59,
+              "retained_rss_mib": 4.24
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.66,
+              "peak_rss_mib": 201.33,
+              "post_del_rss_mib": 11.76,
+              "retained_rss_mib": 9.1
+            }
+          }
+        }
+      }
+    },
+    "flow": {
+      "1": {
+        "glibc": {
+          "baseline_rss_mib": 27.36,
+          "add_sec": 0.004,
+          "add_rate": 236.8,
+          "add_loop_ms": 0,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 27.48,
+          "del_sec": 0.003,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 26.87,
+          "retained_rss_mib": -0.49,
           "components": {
             "ovn-controller": {
               "baseline_rss_mib": 3.03,
@@ -346,48 +1557,252 @@
               "retained_rss_mib": 0
             },
             "ovn-northd": {
-              "baseline_rss_mib": 5.91,
-              "peak_rss_mib": 5.91,
-              "post_del_rss_mib": 5.82,
-              "retained_rss_mib": -0.09
+              "baseline_rss_mib": 5.92,
+              "peak_rss_mib": 5.92,
+              "post_del_rss_mib": 5.79,
+              "retained_rss_mib": -0.13
             },
             "ovs-vswitchd": {
               "baseline_rss_mib": 11.77,
               "peak_rss_mib": 11.89,
-              "post_del_rss_mib": 11.92,
-              "retained_rss_mib": 0.15
+              "post_del_rss_mib": 11.89,
+              "retained_rss_mib": 0.12
             },
             "ovsdb-nb": {
-              "baseline_rss_mib": 2.06,
-              "peak_rss_mib": 2.06,
-              "post_del_rss_mib": 2.06,
-              "retained_rss_mib": 0
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 2.09,
+              "post_del_rss_mib": 1.93,
+              "retained_rss_mib": -0.16
             },
             "ovsdb-ovs": {
               "baseline_rss_mib": 2.04,
               "peak_rss_mib": 2.04,
-              "post_del_rss_mib": 2.04,
-              "retained_rss_mib": 0
+              "post_del_rss_mib": 1.91,
+              "retained_rss_mib": -0.13
             },
             "ovsdb-sb": {
-              "baseline_rss_mib": 2.64,
-              "peak_rss_mib": 2.64,
-              "post_del_rss_mib": 2.64,
-              "retained_rss_mib": 0
+              "baseline_rss_mib": 2.51,
+              "peak_rss_mib": 2.51,
+              "post_del_rss_mib": 2.32,
+              "retained_rss_mib": -0.19
             }
           }
         },
         "jemalloc": {
-          "baseline_rss_mib": 31.46,
-          "add_sec": 0.005,
-          "add_rate": 1955.4,
+          "baseline_rss_mib": 31.49,
+          "add_sec": 0.004,
+          "add_rate": 257.1,
           "add_loop_ms": 0,
           "add_lflow_ms": 0,
-          "peak_rss_mib": 31.53,
+          "peak_rss_mib": 31.56,
           "del_sec": 0.003,
           "del_loop_ms": 0,
-          "post_del_rss_mib": 31.55,
-          "retained_rss_mib": 0.09,
+          "post_del_rss_mib": 31.63,
+          "retained_rss_mib": 0.14,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.9,
+              "peak_rss_mib": 3.9,
+              "post_del_rss_mib": 3.9,
+              "retained_rss_mib": 0
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.86,
+              "peak_rss_mib": 6.86,
+              "post_del_rss_mib": 6.86,
+              "retained_rss_mib": 0
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.36,
+              "peak_rss_mib": 13.43,
+              "post_del_rss_mib": 13.44,
+              "retained_rss_mib": 0.08
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.37,
+              "peak_rss_mib": 2.37,
+              "post_del_rss_mib": 2.38,
+              "retained_rss_mib": 0.01
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.34,
+              "peak_rss_mib": 2.34,
+              "post_del_rss_mib": 2.41,
+              "retained_rss_mib": 0.07
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.66,
+              "peak_rss_mib": 2.66,
+              "post_del_rss_mib": 2.64,
+              "retained_rss_mib": -0.02
+            }
+          }
+        }
+      },
+      "10": {
+        "glibc": {
+          "baseline_rss_mib": 27.35,
+          "add_sec": 0.005,
+          "add_rate": 2018.2,
+          "add_loop_ms": 0,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 27.47,
+          "del_sec": 0.003,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 26.92,
+          "retained_rss_mib": -0.43,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.03,
+              "peak_rss_mib": 3.03,
+              "post_del_rss_mib": 3.03,
+              "retained_rss_mib": 0
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 5.92,
+              "peak_rss_mib": 5.92,
+              "post_del_rss_mib": 5.81,
+              "retained_rss_mib": -0.11
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 11.77,
+              "peak_rss_mib": 11.89,
+              "post_del_rss_mib": 11.93,
+              "retained_rss_mib": 0.16
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 2.09,
+              "post_del_rss_mib": 1.94,
+              "retained_rss_mib": -0.15
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.04,
+              "peak_rss_mib": 2.04,
+              "post_del_rss_mib": 1.91,
+              "retained_rss_mib": -0.13
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.5,
+              "peak_rss_mib": 2.5,
+              "post_del_rss_mib": 2.3,
+              "retained_rss_mib": -0.2
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 31.43,
+          "add_sec": 0.005,
+          "add_rate": 2151.5,
+          "add_loop_ms": 0,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 31.51,
+          "del_sec": 0.004,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 31.59,
+          "retained_rss_mib": 0.16,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.88,
+              "peak_rss_mib": 3.88,
+              "post_del_rss_mib": 3.88,
+              "retained_rss_mib": 0
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.81,
+              "peak_rss_mib": 6.81,
+              "post_del_rss_mib": 6.81,
+              "retained_rss_mib": 0
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.36,
+              "peak_rss_mib": 13.44,
+              "post_del_rss_mib": 13.46,
+              "retained_rss_mib": 0.1
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.38,
+              "peak_rss_mib": 2.38,
+              "post_del_rss_mib": 2.39,
+              "retained_rss_mib": 0.01
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.34,
+              "peak_rss_mib": 2.34,
+              "post_del_rss_mib": 2.39,
+              "retained_rss_mib": 0.05
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.66,
+              "peak_rss_mib": 2.66,
+              "post_del_rss_mib": 2.66,
+              "retained_rss_mib": 0
+            }
+          }
+        }
+      },
+      "100": {
+        "glibc": {
+          "baseline_rss_mib": 27.35,
+          "add_sec": 0.007,
+          "add_rate": 13342.2,
+          "add_loop_ms": 0,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 27.47,
+          "del_sec": 0.003,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 26.97,
+          "retained_rss_mib": -0.38,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.03,
+              "peak_rss_mib": 3.03,
+              "post_del_rss_mib": 3.03,
+              "retained_rss_mib": 0
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 5.92,
+              "peak_rss_mib": 5.92,
+              "post_del_rss_mib": 5.82,
+              "retained_rss_mib": -0.1
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 11.77,
+              "peak_rss_mib": 11.89,
+              "post_del_rss_mib": 11.96,
+              "retained_rss_mib": 0.19
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 2.09,
+              "post_del_rss_mib": 1.94,
+              "retained_rss_mib": -0.15
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.03,
+              "peak_rss_mib": 2.03,
+              "post_del_rss_mib": 1.91,
+              "retained_rss_mib": -0.12
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.51,
+              "peak_rss_mib": 2.51,
+              "post_del_rss_mib": 2.31,
+              "retained_rss_mib": -0.2
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 31.47,
+          "add_sec": 0.008,
+          "add_rate": 12493.8,
+          "add_loop_ms": 0,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 31.61,
+          "del_sec": 0.003,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 31.69,
+          "retained_rss_mib": 0.22,
           "components": {
             "ovn-controller": {
               "baseline_rss_mib": 3.9,
@@ -402,198 +1817,298 @@
               "retained_rss_mib": 0
             },
             "ovs-vswitchd": {
-              "baseline_rss_mib": 13.37,
-              "peak_rss_mib": 13.44,
-              "post_del_rss_mib": 13.46,
-              "retained_rss_mib": 0.09
+              "baseline_rss_mib": 13.36,
+              "peak_rss_mib": 13.5,
+              "post_del_rss_mib": 13.53,
+              "retained_rss_mib": 0.17
             },
             "ovsdb-nb": {
               "baseline_rss_mib": 2.38,
               "peak_rss_mib": 2.38,
-              "post_del_rss_mib": 2.38,
-              "retained_rss_mib": 0
+              "post_del_rss_mib": 2.39,
+              "retained_rss_mib": 0.01
             },
             "ovsdb-ovs": {
-              "baseline_rss_mib": 2.34,
-              "peak_rss_mib": 2.34,
-              "post_del_rss_mib": 2.34,
-              "retained_rss_mib": 0
+              "baseline_rss_mib": 2.33,
+              "peak_rss_mib": 2.33,
+              "post_del_rss_mib": 2.39,
+              "retained_rss_mib": 0.06
             },
             "ovsdb-sb": {
-              "baseline_rss_mib": 2.67,
-              "peak_rss_mib": 2.67,
-              "post_del_rss_mib": 2.67,
-              "retained_rss_mib": 0
+              "baseline_rss_mib": 2.7,
+              "peak_rss_mib": 2.7,
+              "post_del_rss_mib": 2.68,
+              "retained_rss_mib": -0.02
             }
           }
         }
       },
-      "100": {
+      "1000": {
         "glibc": {
-          "baseline_rss_mib": 31.37,
-          "add_sec": 0.008,
-          "add_rate": 12875,
+          "baseline_rss_mib": 27.36,
+          "add_sec": 0.043,
+          "add_rate": 23421.9,
           "add_loop_ms": 0,
           "add_lflow_ms": 0,
-          "peak_rss_mib": 31.5,
+          "peak_rss_mib": 28.1,
           "del_sec": 0.003,
           "del_loop_ms": 0,
-          "post_del_rss_mib": 31.47,
-          "retained_rss_mib": 0.1,
+          "post_del_rss_mib": 27.72,
+          "retained_rss_mib": 0.36,
           "components": {
             "ovn-controller": {
-              "baseline_rss_mib": 3.61,
-              "peak_rss_mib": 3.61,
-              "post_del_rss_mib": 3.62,
-              "retained_rss_mib": 0.01
-            },
-            "ovn-northd": {
-              "baseline_rss_mib": 6.61,
-              "peak_rss_mib": 6.61,
-              "post_del_rss_mib": 6.48,
-              "retained_rss_mib": -0.13
-            },
-            "ovs-vswitchd": {
-              "baseline_rss_mib": 12.23,
-              "peak_rss_mib": 12.36,
-              "post_del_rss_mib": 12.45,
-              "retained_rss_mib": 0.22
-            },
-            "ovsdb-nb": {
-              "baseline_rss_mib": 2.79,
-              "peak_rss_mib": 2.79,
-              "post_del_rss_mib": 2.79,
-              "retained_rss_mib": 0
-            },
-            "ovsdb-ovs": {
-              "baseline_rss_mib": 2.75,
-              "peak_rss_mib": 2.75,
-              "post_del_rss_mib": 2.75,
-              "retained_rss_mib": 0
-            },
-            "ovsdb-sb": {
-              "baseline_rss_mib": 3.38,
-              "peak_rss_mib": 3.38,
-              "post_del_rss_mib": 3.38,
-              "retained_rss_mib": 0
-            }
-          }
-        },
-        "jemalloc": {
-          "baseline_rss_mib": 34.6,
-          "add_sec": 0.01,
-          "add_rate": 9720.1,
-          "add_loop_ms": 0,
-          "add_lflow_ms": 0,
-          "peak_rss_mib": 34.72,
-          "del_sec": 0.004,
-          "del_loop_ms": 0,
-          "post_del_rss_mib": 34.79,
-          "retained_rss_mib": 0.19,
-          "components": {
-            "ovn-controller": {
-              "baseline_rss_mib": 4.34,
-              "peak_rss_mib": 4.34,
-              "post_del_rss_mib": 4.35,
-              "retained_rss_mib": 0.01
-            },
-            "ovn-northd": {
-              "baseline_rss_mib": 7.38,
-              "peak_rss_mib": 7.38,
-              "post_del_rss_mib": 7.39,
-              "retained_rss_mib": 0.01
-            },
-            "ovs-vswitchd": {
-              "baseline_rss_mib": 13.74,
-              "peak_rss_mib": 13.86,
-              "post_del_rss_mib": 13.9,
-              "retained_rss_mib": 0.16
-            },
-            "ovsdb-nb": {
-              "baseline_rss_mib": 2.93,
-              "peak_rss_mib": 2.93,
-              "post_del_rss_mib": 2.93,
-              "retained_rss_mib": 0
-            },
-            "ovsdb-ovs": {
-              "baseline_rss_mib": 2.93,
-              "peak_rss_mib": 2.93,
-              "post_del_rss_mib": 2.93,
-              "retained_rss_mib": 0
-            },
-            "ovsdb-sb": {
-              "baseline_rss_mib": 3.28,
-              "peak_rss_mib": 3.28,
-              "post_del_rss_mib": 3.29,
-              "retained_rss_mib": 0.01
-            }
-          }
-        }
-      },
-      "1000": {},
-      "10000": {},
-      "100000": {
-        "glibc": {
-          "baseline_rss_mib": 27.38,
-          "add_sec": 3.464,
-          "add_rate": 28868.8,
-          "add_loop_ms": 0,
-          "add_lflow_ms": 0,
-          "peak_rss_mib": 101.05,
-          "del_sec": 0.036,
-          "del_loop_ms": 0,
-          "post_del_rss_mib": 106.62,
-          "retained_rss_mib": 79.24,
-          "components": {
-            "ovn-controller": {
-              "baseline_rss_mib": 3.04,
-              "peak_rss_mib": 3.04,
-              "post_del_rss_mib": 3.04,
+              "baseline_rss_mib": 3.03,
+              "peak_rss_mib": 3.03,
+              "post_del_rss_mib": 3.03,
               "retained_rss_mib": 0
             },
             "ovn-northd": {
               "baseline_rss_mib": 5.92,
-              "peak_rss_mib": 5.82,
+              "peak_rss_mib": 5.92,
               "post_del_rss_mib": 5.82,
               "retained_rss_mib": -0.1
             },
             "ovs-vswitchd": {
               "baseline_rss_mib": 11.77,
-              "peak_rss_mib": 85.54,
-              "post_del_rss_mib": 91.11,
-              "retained_rss_mib": 79.34
+              "peak_rss_mib": 12.51,
+              "post_del_rss_mib": 12.7,
+              "retained_rss_mib": 0.93
             },
             "ovsdb-nb": {
               "baseline_rss_mib": 2.09,
               "peak_rss_mib": 2.09,
-              "post_del_rss_mib": 2.09,
-              "retained_rss_mib": 0
+              "post_del_rss_mib": 1.95,
+              "retained_rss_mib": -0.14
             },
             "ovsdb-ovs": {
               "baseline_rss_mib": 2.04,
               "peak_rss_mib": 2.04,
-              "post_del_rss_mib": 2.04,
-              "retained_rss_mib": 0
+              "post_del_rss_mib": 1.91,
+              "retained_rss_mib": -0.13
             },
             "ovsdb-sb": {
-              "baseline_rss_mib": 2.52,
-              "peak_rss_mib": 2.52,
-              "post_del_rss_mib": 2.52,
-              "retained_rss_mib": 0
+              "baseline_rss_mib": 2.51,
+              "peak_rss_mib": 2.51,
+              "post_del_rss_mib": 2.31,
+              "retained_rss_mib": -0.2
             }
           }
         },
         "jemalloc": {
-          "baseline_rss_mib": 31.47,
-          "add_sec": 3.304,
-          "add_rate": 30266.6,
+          "baseline_rss_mib": 31.41,
+          "add_sec": 0.039,
+          "add_rate": 25355,
           "add_loop_ms": 0,
           "add_lflow_ms": 0,
-          "peak_rss_mib": 102.92,
+          "peak_rss_mib": 32.13,
+          "del_sec": 0.003,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 32.08,
+          "retained_rss_mib": 0.67,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.89,
+              "peak_rss_mib": 3.89,
+              "post_del_rss_mib": 3.89,
+              "retained_rss_mib": 0
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.8,
+              "peak_rss_mib": 6.8,
+              "post_del_rss_mib": 6.8,
+              "retained_rss_mib": 0
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.35,
+              "peak_rss_mib": 14.07,
+              "post_del_rss_mib": 13.96,
+              "retained_rss_mib": 0.61
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.37,
+              "peak_rss_mib": 2.37,
+              "post_del_rss_mib": 2.39,
+              "retained_rss_mib": 0.02
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.34,
+              "peak_rss_mib": 2.34,
+              "post_del_rss_mib": 2.39,
+              "retained_rss_mib": 0.05
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.66,
+              "peak_rss_mib": 2.66,
+              "post_del_rss_mib": 2.65,
+              "retained_rss_mib": -0.01
+            }
+          }
+        }
+      },
+      "10000": {
+        "glibc": {
+          "baseline_rss_mib": 27.36,
+          "add_sec": 0.337,
+          "add_rate": 29679.1,
+          "add_loop_ms": 0,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 34.8,
+          "del_sec": 0.006,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 35.04,
+          "retained_rss_mib": 7.68,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.03,
+              "peak_rss_mib": 3.03,
+              "post_del_rss_mib": 3.03,
+              "retained_rss_mib": 0
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 5.92,
+              "peak_rss_mib": 5.92,
+              "post_del_rss_mib": 5.8,
+              "retained_rss_mib": -0.12
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 11.76,
+              "peak_rss_mib": 19.2,
+              "post_del_rss_mib": 20.05,
+              "retained_rss_mib": 8.29
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.1,
+              "peak_rss_mib": 2.1,
+              "post_del_rss_mib": 1.94,
+              "retained_rss_mib": -0.16
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.04,
+              "peak_rss_mib": 2.04,
+              "post_del_rss_mib": 1.91,
+              "retained_rss_mib": -0.13
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.51,
+              "peak_rss_mib": 2.51,
+              "post_del_rss_mib": 2.31,
+              "retained_rss_mib": -0.2
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 31.5,
+          "add_sec": 0.293,
+          "add_rate": 34183.9,
+          "add_loop_ms": 0,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 38.91,
+          "del_sec": 0.006,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 32.49,
+          "retained_rss_mib": 0.99,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.88,
+              "peak_rss_mib": 3.88,
+              "post_del_rss_mib": 3.88,
+              "retained_rss_mib": 0
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.81,
+              "peak_rss_mib": 6.81,
+              "post_del_rss_mib": 6.81,
+              "retained_rss_mib": 0
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.36,
+              "peak_rss_mib": 20.77,
+              "post_del_rss_mib": 14.3,
+              "retained_rss_mib": 0.94
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.38,
+              "peak_rss_mib": 2.38,
+              "post_del_rss_mib": 2.39,
+              "retained_rss_mib": 0.01
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.34,
+              "peak_rss_mib": 2.34,
+              "post_del_rss_mib": 2.4,
+              "retained_rss_mib": 0.06
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.73,
+              "peak_rss_mib": 2.73,
+              "post_del_rss_mib": 2.71,
+              "retained_rss_mib": -0.02
+            }
+          }
+        }
+      },
+      "100000": {
+        "glibc": {
+          "baseline_rss_mib": 27.37,
+          "add_sec": 2.984,
+          "add_rate": 33506.8,
+          "add_loop_ms": 0,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 101.06,
+          "del_sec": 0.037,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 106.16,
+          "retained_rss_mib": 78.79,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.03,
+              "peak_rss_mib": 3.03,
+              "post_del_rss_mib": 3.03,
+              "retained_rss_mib": 0
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 5.93,
+              "peak_rss_mib": 5.84,
+              "post_del_rss_mib": 5.84,
+              "retained_rss_mib": -0.09
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 11.77,
+              "peak_rss_mib": 85.55,
+              "post_del_rss_mib": 91.12,
+              "retained_rss_mib": 79.35
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 2.09,
+              "post_del_rss_mib": 1.95,
+              "retained_rss_mib": -0.14
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.04,
+              "peak_rss_mib": 2.04,
+              "post_del_rss_mib": 1.91,
+              "retained_rss_mib": -0.13
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.51,
+              "peak_rss_mib": 2.51,
+              "post_del_rss_mib": 2.31,
+              "retained_rss_mib": -0.2
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 31.44,
+          "add_sec": 3.063,
+          "add_rate": 32646.8,
+          "add_loop_ms": 0,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 102.88,
           "del_sec": 0.027,
           "del_loop_ms": 0,
-          "post_del_rss_mib": 32.79,
-          "retained_rss_mib": 1.32,
+          "post_del_rss_mib": 32.9,
+          "retained_rss_mib": 1.46,
           "components": {
             "ovn-controller": {
               "baseline_rss_mib": 3.89,
@@ -609,267 +2124,671 @@
             },
             "ovs-vswitchd": {
               "baseline_rss_mib": 13.36,
-              "peak_rss_mib": 84.81,
-              "post_del_rss_mib": 14.68,
-              "retained_rss_mib": 1.32
+              "peak_rss_mib": 84.8,
+              "post_del_rss_mib": 14.75,
+              "retained_rss_mib": 1.39
             },
             "ovsdb-nb": {
-              "baseline_rss_mib": 2.38,
-              "peak_rss_mib": 2.38,
-              "post_del_rss_mib": 2.38,
-              "retained_rss_mib": 0
+              "baseline_rss_mib": 2.37,
+              "peak_rss_mib": 2.37,
+              "post_del_rss_mib": 2.39,
+              "retained_rss_mib": 0.02
             },
             "ovsdb-ovs": {
               "baseline_rss_mib": 2.33,
               "peak_rss_mib": 2.33,
-              "post_del_rss_mib": 2.33,
-              "retained_rss_mib": 0
+              "post_del_rss_mib": 2.39,
+              "retained_rss_mib": 0.06
             },
             "ovsdb-sb": {
-              "baseline_rss_mib": 2.69,
-              "peak_rss_mib": 2.69,
-              "post_del_rss_mib": 2.69,
-              "retained_rss_mib": 0
+              "baseline_rss_mib": 2.67,
+              "peak_rss_mib": 2.67,
+              "post_del_rss_mib": 2.66,
+              "retained_rss_mib": -0.01
             }
           }
         }
       }
     },
     "load_balancer": {
-      "1": {},
-      "10": {
+      "1": {
         "glibc": {
-          "baseline_rss_mib": 34,
-          "add_sec": 0.007,
-          "add_rate": 1451,
-          "add_loop_ms": 0.13,
-          "add_lflow_ms": 0,
-          "peak_rss_mib": 34,
-          "del_sec": 0.007,
-          "del_loop_ms": 0,
-          "post_del_rss_mib": 33.58,
-          "retained_rss_mib": -0.42,
+          "baseline_rss_mib": 30.12,
+          "add_sec": 0.004,
+          "add_rate": 235,
+          "add_loop_ms": 0,
+          "add_lflow_ms": 1,
+          "peak_rss_mib": 30.12,
+          "del_sec": 0.005,
+          "del_loop_ms": 0.01,
+          "post_del_rss_mib": 29.45,
+          "retained_rss_mib": -0.67,
           "components": {
             "ovn-controller": {
-              "baseline_rss_mib": 5.42,
-              "peak_rss_mib": 5.42,
-              "post_del_rss_mib": 4.99,
-              "retained_rss_mib": -0.43
+              "baseline_rss_mib": 4.84,
+              "peak_rss_mib": 4.84,
+              "post_del_rss_mib": 4.33,
+              "retained_rss_mib": -0.51
             },
             "ovn-northd": {
-              "baseline_rss_mib": 6.73,
-              "peak_rss_mib": 6.73,
-              "post_del_rss_mib": 6.73,
-              "retained_rss_mib": 0
+              "baseline_rss_mib": 6.07,
+              "peak_rss_mib": 6.07,
+              "post_del_rss_mib": 6.05,
+              "retained_rss_mib": -0.02
             },
             "ovs-vswitchd": {
-              "baseline_rss_mib": 12.85,
-              "peak_rss_mib": 12.85,
-              "post_del_rss_mib": 12.86,
-              "retained_rss_mib": 0.01
+              "baseline_rss_mib": 12.4,
+              "peak_rss_mib": 12.4,
+              "post_del_rss_mib": 12.4,
+              "retained_rss_mib": 0
             },
             "ovsdb-nb": {
-              "baseline_rss_mib": 2.79,
-              "peak_rss_mib": 2.79,
-              "post_del_rss_mib": 2.79,
-              "retained_rss_mib": 0
+              "baseline_rss_mib": 2.06,
+              "peak_rss_mib": 2.06,
+              "post_del_rss_mib": 2,
+              "retained_rss_mib": -0.06
             },
             "ovsdb-ovs": {
-              "baseline_rss_mib": 2.8,
-              "peak_rss_mib": 2.8,
-              "post_del_rss_mib": 2.8,
-              "retained_rss_mib": 0
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 2.09,
+              "post_del_rss_mib": 2.08,
+              "retained_rss_mib": -0.01
             },
             "ovsdb-sb": {
-              "baseline_rss_mib": 3.41,
-              "peak_rss_mib": 3.41,
-              "post_del_rss_mib": 3.41,
-              "retained_rss_mib": 0
+              "baseline_rss_mib": 2.66,
+              "peak_rss_mib": 2.66,
+              "post_del_rss_mib": 2.59,
+              "retained_rss_mib": -0.07
             }
           }
         },
         "jemalloc": {
-          "baseline_rss_mib": 37.42,
+          "baseline_rss_mib": 34.03,
           "add_sec": 0.005,
-          "add_rate": 1850.8,
-          "add_loop_ms": 0.25,
+          "add_rate": 220.1,
+          "add_loop_ms": 0.13,
           "add_lflow_ms": 0,
-          "peak_rss_mib": 37.38,
+          "peak_rss_mib": 34.03,
           "del_sec": 0.005,
-          "del_loop_ms": 0,
-          "post_del_rss_mib": 37.42,
-          "retained_rss_mib": 0,
+          "del_loop_ms": 0.5,
+          "post_del_rss_mib": 34.14,
+          "retained_rss_mib": 0.11,
           "components": {
             "ovn-controller": {
-              "baseline_rss_mib": 5.78,
-              "peak_rss_mib": 5.78,
-              "post_del_rss_mib": 5.79,
-              "retained_rss_mib": 0.01
+              "baseline_rss_mib": 5.25,
+              "peak_rss_mib": 5.24,
+              "post_del_rss_mib": 5.24,
+              "retained_rss_mib": -0.01
             },
             "ovn-northd": {
-              "baseline_rss_mib": 7.71,
-              "peak_rss_mib": 7.71,
-              "post_del_rss_mib": 7.72,
+              "baseline_rss_mib": 7.06,
+              "peak_rss_mib": 7.07,
+              "post_del_rss_mib": 7.07,
               "retained_rss_mib": 0.01
             },
             "ovs-vswitchd": {
-              "baseline_rss_mib": 14.35,
-              "peak_rss_mib": 14.35,
-              "post_del_rss_mib": 14.36,
+              "baseline_rss_mib": 13.95,
+              "peak_rss_mib": 13.95,
+              "post_del_rss_mib": 13.96,
               "retained_rss_mib": 0.01
             },
             "ovsdb-nb": {
-              "baseline_rss_mib": 2.94,
-              "peak_rss_mib": 2.94,
-              "post_del_rss_mib": 2.94,
+              "baseline_rss_mib": 2.39,
+              "peak_rss_mib": 2.39,
+              "post_del_rss_mib": 2.4,
+              "retained_rss_mib": 0.01
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.47,
+              "peak_rss_mib": 2.47,
+              "post_del_rss_mib": 2.54,
+              "retained_rss_mib": 0.07
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.91,
+              "peak_rss_mib": 2.91,
+              "post_del_rss_mib": 2.93,
+              "retained_rss_mib": 0.02
+            }
+          }
+        }
+      },
+      "10": {
+        "glibc": {
+          "baseline_rss_mib": 29.7,
+          "add_sec": 0.005,
+          "add_rate": 2106.1,
+          "add_loop_ms": 0.25,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 29.7,
+          "del_sec": 0.005,
+          "del_loop_ms": 0.56,
+          "post_del_rss_mib": 29.43,
+          "retained_rss_mib": -0.27,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 4.4,
+              "peak_rss_mib": 4.4,
+              "post_del_rss_mib": 4.32,
+              "retained_rss_mib": -0.08
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.06,
+              "peak_rss_mib": 6.06,
+              "post_del_rss_mib": 6.04,
+              "retained_rss_mib": -0.02
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 12.4,
+              "peak_rss_mib": 12.4,
+              "post_del_rss_mib": 12.4,
+              "retained_rss_mib": 0
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 2.09,
+              "post_del_rss_mib": 2,
+              "retained_rss_mib": -0.09
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 2.09,
+              "post_del_rss_mib": 2.08,
+              "retained_rss_mib": -0.01
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.66,
+              "peak_rss_mib": 2.66,
+              "post_del_rss_mib": 2.59,
+              "retained_rss_mib": -0.07
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 34.07,
+          "add_sec": 0.005,
+          "add_rate": 1996.8,
+          "add_loop_ms": 0.75,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 34.06,
+          "del_sec": 0.006,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 34.16,
+          "retained_rss_mib": 0.09,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 5.23,
+              "peak_rss_mib": 5.23,
+              "post_del_rss_mib": 5.23,
+              "retained_rss_mib": 0
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 7.1,
+              "peak_rss_mib": 7.1,
+              "post_del_rss_mib": 7.11,
+              "retained_rss_mib": 0.01
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.95,
+              "peak_rss_mib": 13.95,
+              "post_del_rss_mib": 13.96,
+              "retained_rss_mib": 0.01
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.39,
+              "peak_rss_mib": 2.39,
+              "post_del_rss_mib": 2.39,
               "retained_rss_mib": 0
             },
             "ovsdb-ovs": {
-              "baseline_rss_mib": 3.05,
-              "peak_rss_mib": 3.05,
-              "post_del_rss_mib": 3.05,
-              "retained_rss_mib": 0
+              "baseline_rss_mib": 2.48,
+              "peak_rss_mib": 2.48,
+              "post_del_rss_mib": 2.54,
+              "retained_rss_mib": 0.06
             },
             "ovsdb-sb": {
-              "baseline_rss_mib": 3.59,
-              "peak_rss_mib": 3.55,
-              "post_del_rss_mib": 3.56,
-              "retained_rss_mib": -0.03
+              "baseline_rss_mib": 2.92,
+              "peak_rss_mib": 2.91,
+              "post_del_rss_mib": 2.93,
+              "retained_rss_mib": 0.01
             }
           }
         }
       },
       "100": {
         "glibc": {
-          "baseline_rss_mib": 34,
-          "add_sec": 0.007,
-          "add_rate": 13552,
-          "add_loop_ms": 0,
+          "baseline_rss_mib": 30.14,
+          "add_sec": 0.005,
+          "add_rate": 20868.1,
+          "add_loop_ms": 0.13,
           "add_lflow_ms": 0,
-          "peak_rss_mib": 34.01,
-          "del_sec": 0.006,
-          "del_loop_ms": 0.51,
-          "post_del_rss_mib": 33.57,
-          "retained_rss_mib": -0.43,
+          "peak_rss_mib": 30.14,
+          "del_sec": 0.005,
+          "del_loop_ms": 0.25,
+          "post_del_rss_mib": 29.49,
+          "retained_rss_mib": -0.65,
           "components": {
             "ovn-controller": {
-              "baseline_rss_mib": 5.42,
-              "peak_rss_mib": 5.42,
-              "post_del_rss_mib": 4.98,
-              "retained_rss_mib": -0.44
+              "baseline_rss_mib": 4.85,
+              "peak_rss_mib": 4.85,
+              "post_del_rss_mib": 4.34,
+              "retained_rss_mib": -0.51
             },
             "ovn-northd": {
-              "baseline_rss_mib": 6.73,
-              "peak_rss_mib": 6.74,
-              "post_del_rss_mib": 6.73,
-              "retained_rss_mib": 0
+              "baseline_rss_mib": 6.06,
+              "peak_rss_mib": 6.06,
+              "post_del_rss_mib": 6.04,
+              "retained_rss_mib": -0.02
             },
             "ovs-vswitchd": {
-              "baseline_rss_mib": 12.85,
-              "peak_rss_mib": 12.85,
-              "post_del_rss_mib": 12.86,
-              "retained_rss_mib": 0.01
-            },
-            "ovsdb-nb": {
-              "baseline_rss_mib": 2.79,
-              "peak_rss_mib": 2.79,
-              "post_del_rss_mib": 2.79,
+              "baseline_rss_mib": 12.39,
+              "peak_rss_mib": 12.39,
+              "post_del_rss_mib": 12.39,
               "retained_rss_mib": 0
             },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.1,
+              "peak_rss_mib": 2.1,
+              "post_del_rss_mib": 2.02,
+              "retained_rss_mib": -0.08
+            },
             "ovsdb-ovs": {
-              "baseline_rss_mib": 2.8,
-              "peak_rss_mib": 2.8,
-              "post_del_rss_mib": 2.8,
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 2.09,
+              "post_del_rss_mib": 2.09,
               "retained_rss_mib": 0
             },
             "ovsdb-sb": {
-              "baseline_rss_mib": 3.41,
-              "peak_rss_mib": 3.41,
-              "post_del_rss_mib": 3.41,
-              "retained_rss_mib": 0
+              "baseline_rss_mib": 2.65,
+              "peak_rss_mib": 2.65,
+              "post_del_rss_mib": 2.61,
+              "retained_rss_mib": -0.04
             }
           }
         },
         "jemalloc": {
-          "baseline_rss_mib": 37.37,
-          "add_sec": 0.007,
-          "add_rate": 14054.8,
-          "add_loop_ms": 0.13,
+          "baseline_rss_mib": 34.02,
+          "add_sec": 0.005,
+          "add_rate": 18807.6,
+          "add_loop_ms": 0,
           "add_lflow_ms": 0,
-          "peak_rss_mib": 37.33,
-          "del_sec": 0.007,
-          "del_loop_ms": 0.5,
-          "post_del_rss_mib": 37.36,
-          "retained_rss_mib": -0.01,
+          "peak_rss_mib": 34.02,
+          "del_sec": 0.005,
+          "del_loop_ms": 0.01,
+          "post_del_rss_mib": 34.08,
+          "retained_rss_mib": 0.06,
           "components": {
             "ovn-controller": {
-              "baseline_rss_mib": 5.76,
-              "peak_rss_mib": 5.76,
-              "post_del_rss_mib": 5.77,
-              "retained_rss_mib": 0.01
-            },
-            "ovn-northd": {
-              "baseline_rss_mib": 7.69,
-              "peak_rss_mib": 7.69,
-              "post_del_rss_mib": 7.69,
+              "baseline_rss_mib": 5.24,
+              "peak_rss_mib": 5.24,
+              "post_del_rss_mib": 5.24,
               "retained_rss_mib": 0
             },
+            "ovn-northd": {
+              "baseline_rss_mib": 7.09,
+              "peak_rss_mib": 7.09,
+              "post_del_rss_mib": 7.08,
+              "retained_rss_mib": -0.01
+            },
             "ovs-vswitchd": {
-              "baseline_rss_mib": 14.35,
-              "peak_rss_mib": 14.35,
-              "post_del_rss_mib": 14.36,
-              "retained_rss_mib": 0.01
+              "baseline_rss_mib": 13.96,
+              "peak_rss_mib": 13.96,
+              "post_del_rss_mib": 13.96,
+              "retained_rss_mib": 0
             },
             "ovsdb-nb": {
-              "baseline_rss_mib": 2.95,
-              "peak_rss_mib": 2.95,
-              "post_del_rss_mib": 2.95,
+              "baseline_rss_mib": 2.4,
+              "peak_rss_mib": 2.4,
+              "post_del_rss_mib": 2.4,
               "retained_rss_mib": 0
             },
             "ovsdb-ovs": {
-              "baseline_rss_mib": 3.06,
-              "peak_rss_mib": 3.06,
-              "post_del_rss_mib": 3.06,
-              "retained_rss_mib": 0
+              "baseline_rss_mib": 2.48,
+              "peak_rss_mib": 2.48,
+              "post_del_rss_mib": 2.54,
+              "retained_rss_mib": 0.06
             },
             "ovsdb-sb": {
-              "baseline_rss_mib": 3.56,
-              "peak_rss_mib": 3.52,
-              "post_del_rss_mib": 3.53,
-              "retained_rss_mib": -0.03
+              "baseline_rss_mib": 2.85,
+              "peak_rss_mib": 2.85,
+              "post_del_rss_mib": 2.86,
+              "retained_rss_mib": 0.01
             }
           }
         }
       },
-      "1000": {},
-      "10000": {}
-    },
-    "port": {
-      "1": {},
-      "10": {
+      "1000": {
         "glibc": {
-          "baseline_rss_mib": 27.51,
-          "add_sec": 0.006,
-          "add_rate": 1618.6,
+          "baseline_rss_mib": 30.15,
+          "add_sec": 0.008,
+          "add_rate": 118666.2,
           "add_loop_ms": 0,
           "add_lflow_ms": 0,
-          "peak_rss_mib": 30.09,
+          "peak_rss_mib": 30.15,
+          "del_sec": 0.005,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 29.47,
+          "retained_rss_mib": -0.68,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 4.85,
+              "peak_rss_mib": 4.85,
+              "post_del_rss_mib": 4.34,
+              "retained_rss_mib": -0.51
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.06,
+              "peak_rss_mib": 6.06,
+              "post_del_rss_mib": 6.04,
+              "retained_rss_mib": -0.02
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 12.39,
+              "peak_rss_mib": 12.39,
+              "post_del_rss_mib": 12.39,
+              "retained_rss_mib": 0
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.1,
+              "peak_rss_mib": 2.1,
+              "post_del_rss_mib": 2.02,
+              "retained_rss_mib": -0.08
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 2.09,
+              "post_del_rss_mib": 2.07,
+              "retained_rss_mib": -0.02
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.66,
+              "peak_rss_mib": 2.66,
+              "post_del_rss_mib": 2.61,
+              "retained_rss_mib": -0.05
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 34.1,
+          "add_sec": 0.007,
+          "add_rate": 136369.8,
+          "add_loop_ms": 0.52,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 34.1,
+          "del_sec": 0.005,
+          "del_loop_ms": 0.06,
+          "post_del_rss_mib": 34.16,
+          "retained_rss_mib": 0.06,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 5.25,
+              "peak_rss_mib": 5.24,
+              "post_del_rss_mib": 5.24,
+              "retained_rss_mib": -0.01
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 7.11,
+              "peak_rss_mib": 7.11,
+              "post_del_rss_mib": 7.11,
+              "retained_rss_mib": 0
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.95,
+              "peak_rss_mib": 13.95,
+              "post_del_rss_mib": 13.95,
+              "retained_rss_mib": 0
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.4,
+              "peak_rss_mib": 2.41,
+              "post_del_rss_mib": 2.39,
+              "retained_rss_mib": -0.01
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.48,
+              "peak_rss_mib": 2.48,
+              "post_del_rss_mib": 2.54,
+              "retained_rss_mib": 0.06
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.91,
+              "peak_rss_mib": 2.91,
+              "post_del_rss_mib": 2.93,
+              "retained_rss_mib": 0.02
+            }
+          }
+        }
+      },
+      "10000": {
+        "glibc": {
+          "baseline_rss_mib": 30.14,
+          "add_sec": 0.023,
+          "add_rate": 429996.6,
+          "add_loop_ms": 0,
+          "add_lflow_ms": 1,
+          "peak_rss_mib": 30.14,
+          "del_sec": 0.005,
+          "del_loop_ms": 0.13,
+          "post_del_rss_mib": 29.46,
+          "retained_rss_mib": -0.68,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 4.85,
+              "peak_rss_mib": 4.85,
+              "post_del_rss_mib": 4.34,
+              "retained_rss_mib": -0.51
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.06,
+              "peak_rss_mib": 6.06,
+              "post_del_rss_mib": 6.04,
+              "retained_rss_mib": -0.02
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 12.39,
+              "peak_rss_mib": 12.39,
+              "post_del_rss_mib": 12.39,
+              "retained_rss_mib": 0
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.1,
+              "peak_rss_mib": 2.1,
+              "post_del_rss_mib": 2.01,
+              "retained_rss_mib": -0.09
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 2.09,
+              "post_del_rss_mib": 2.08,
+              "retained_rss_mib": -0.01
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.65,
+              "peak_rss_mib": 2.65,
+              "post_del_rss_mib": 2.6,
+              "retained_rss_mib": -0.05
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 34.09,
+          "add_sec": 0.022,
+          "add_rate": 457498.4,
+          "add_loop_ms": 0.25,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 34.02,
+          "del_sec": 0.005,
+          "del_loop_ms": 0.51,
+          "post_del_rss_mib": 34.12,
+          "retained_rss_mib": 0.03,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 5.24,
+              "peak_rss_mib": 5.24,
+              "post_del_rss_mib": 5.24,
+              "retained_rss_mib": 0
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 7.11,
+              "peak_rss_mib": 7.11,
+              "post_del_rss_mib": 7.1,
+              "retained_rss_mib": -0.01
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.96,
+              "peak_rss_mib": 13.96,
+              "post_del_rss_mib": 13.96,
+              "retained_rss_mib": 0
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.4,
+              "peak_rss_mib": 2.34,
+              "post_del_rss_mib": 2.38,
+              "retained_rss_mib": -0.02
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.46,
+              "peak_rss_mib": 2.46,
+              "post_del_rss_mib": 2.53,
+              "retained_rss_mib": 0.07
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.92,
+              "peak_rss_mib": 2.91,
+              "post_del_rss_mib": 2.91,
+              "retained_rss_mib": -0.01
+            }
+          }
+        }
+      }
+    },
+    "port": {
+      "1": {
+        "glibc": {
+          "baseline_rss_mib": 27.54,
+          "add_sec": 0.005,
+          "add_rate": 196.5,
+          "add_loop_ms": 0.25,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 28.75,
           "del_sec": 0.01,
           "del_loop_ms": 0.13,
-          "post_del_rss_mib": 29.62,
-          "retained_rss_mib": 2.11,
+          "post_del_rss_mib": 28.3,
+          "retained_rss_mib": 0.76,
           "components": {
             "ovn-controller": {
               "baseline_rss_mib": 3.03,
-              "peak_rss_mib": 4.83,
-              "post_del_rss_mib": 4.35,
-              "retained_rss_mib": 1.32
+              "peak_rss_mib": 3.96,
+              "post_del_rss_mib": 3.88,
+              "retained_rss_mib": 0.85
             },
             "ovn-northd": {
               "baseline_rss_mib": 5.96,
-              "peak_rss_mib": 6.05,
-              "post_del_rss_mib": 5.99,
-              "retained_rss_mib": 0.03
+              "peak_rss_mib": 5.96,
+              "post_del_rss_mib": 5.93,
+              "retained_rss_mib": -0.03
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 11.77,
+              "peak_rss_mib": 12.08,
+              "post_del_rss_mib": 12.08,
+              "retained_rss_mib": 0.31
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 2.09,
+              "post_del_rss_mib": 1.95,
+              "retained_rss_mib": -0.14
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.03,
+              "peak_rss_mib": 2.03,
+              "post_del_rss_mib": 1.94,
+              "retained_rss_mib": -0.09
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.66,
+              "peak_rss_mib": 2.63,
+              "post_del_rss_mib": 2.52,
+              "retained_rss_mib": -0.14
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 31.68,
+          "add_sec": 0.006,
+          "add_rate": 161.8,
+          "add_loop_ms": 0.01,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 32.82,
+          "del_sec": 0.009,
+          "del_loop_ms": 0.13,
+          "post_del_rss_mib": 32.93,
+          "retained_rss_mib": 1.25,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.9,
+              "peak_rss_mib": 4.76,
+              "post_del_rss_mib": 4.77,
+              "retained_rss_mib": 0.87
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.92,
+              "peak_rss_mib": 6.9,
+              "post_del_rss_mib": 6.9,
+              "retained_rss_mib": -0.02
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.36,
+              "peak_rss_mib": 13.66,
+              "post_del_rss_mib": 13.68,
+              "retained_rss_mib": 0.32
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.38,
+              "peak_rss_mib": 2.36,
+              "post_del_rss_mib": 2.37,
+              "retained_rss_mib": -0.01
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.33,
+              "peak_rss_mib": 2.35,
+              "post_del_rss_mib": 2.41,
+              "retained_rss_mib": 0.08
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.79,
+              "peak_rss_mib": 2.79,
+              "post_del_rss_mib": 2.8,
+              "retained_rss_mib": 0.01
+            }
+          }
+        }
+      },
+      "10": {
+        "glibc": {
+          "baseline_rss_mib": 27.57,
+          "add_sec": 0.005,
+          "add_rate": 1973.9,
+          "add_loop_ms": 0.01,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 30.17,
+          "del_sec": 0.009,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 29.51,
+          "retained_rss_mib": 1.94,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.04,
+              "peak_rss_mib": 4.84,
+              "post_del_rss_mib": 4.36,
+              "retained_rss_mib": 1.32
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 5.97,
+              "peak_rss_mib": 6.07,
+              "post_del_rss_mib": 6.02,
+              "retained_rss_mib": 0.05
             },
             "ovs-vswitchd": {
               "baseline_rss_mib": 11.77,
@@ -878,187 +2797,894 @@
               "retained_rss_mib": 0.68
             },
             "ovsdb-nb": {
-              "baseline_rss_mib": 2.06,
-              "peak_rss_mib": 2.06,
-              "post_del_rss_mib": 2.06,
-              "retained_rss_mib": 0
+              "baseline_rss_mib": 2.1,
+              "peak_rss_mib": 2.1,
+              "post_del_rss_mib": 2.01,
+              "retained_rss_mib": -0.09
             },
             "ovsdb-ovs": {
               "baseline_rss_mib": 2.04,
               "peak_rss_mib": 2.1,
-              "post_del_rss_mib": 2.11,
-              "retained_rss_mib": 0.07
+              "post_del_rss_mib": 2.07,
+              "retained_rss_mib": 0.03
             },
             "ovsdb-sb": {
               "baseline_rss_mib": 2.65,
-              "peak_rss_mib": 2.66,
-              "post_del_rss_mib": 2.66,
-              "retained_rss_mib": 0.01
+              "peak_rss_mib": 2.67,
+              "post_del_rss_mib": 2.6,
+              "retained_rss_mib": -0.05
             }
           }
         },
         "jemalloc": {
-          "baseline_rss_mib": 31.64,
-          "add_sec": 0.005,
-          "add_rate": 2078.1,
-          "add_loop_ms": 0,
-          "add_lflow_ms": 0,
-          "peak_rss_mib": 34.03,
-          "del_sec": 0.009,
-          "del_loop_ms": 0.56,
-          "post_del_rss_mib": 34.06,
-          "retained_rss_mib": 2.42,
+          "baseline_rss_mib": 31.7,
+          "add_sec": 0.006,
+          "add_rate": 1604.6,
+          "add_loop_ms": 0.25,
+          "add_lflow_ms": 1,
+          "peak_rss_mib": 34.05,
+          "del_sec": 0.01,
+          "del_loop_ms": 0.13,
+          "post_del_rss_mib": 34.11,
+          "retained_rss_mib": 2.41,
           "components": {
             "ovn-controller": {
-              "baseline_rss_mib": 3.88,
+              "baseline_rss_mib": 3.89,
               "peak_rss_mib": 5.24,
-              "post_del_rss_mib": 5.28,
-              "retained_rss_mib": 1.4
+              "post_del_rss_mib": 5.25,
+              "retained_rss_mib": 1.36
             },
             "ovn-northd": {
-              "baseline_rss_mib": 6.89,
-              "peak_rss_mib": 7.07,
-              "post_del_rss_mib": 7.08,
-              "retained_rss_mib": 0.19
+              "baseline_rss_mib": 6.93,
+              "peak_rss_mib": 7.11,
+              "post_del_rss_mib": 7.11,
+              "retained_rss_mib": 0.18
             },
             "ovs-vswitchd": {
               "baseline_rss_mib": 13.37,
               "peak_rss_mib": 13.96,
-              "post_del_rss_mib": 13.97,
-              "retained_rss_mib": 0.6
+              "post_del_rss_mib": 13.96,
+              "retained_rss_mib": 0.59
             },
             "ovsdb-nb": {
               "baseline_rss_mib": 2.37,
               "peak_rss_mib": 2.39,
-              "post_del_rss_mib": 2.39,
-              "retained_rss_mib": 0.02
+              "post_del_rss_mib": 2.4,
+              "retained_rss_mib": 0.03
             },
             "ovsdb-ovs": {
-              "baseline_rss_mib": 2.33,
+              "baseline_rss_mib": 2.34,
               "peak_rss_mib": 2.46,
-              "post_del_rss_mib": 2.47,
-              "retained_rss_mib": 0.14
+              "post_del_rss_mib": 2.53,
+              "retained_rss_mib": 0.19
             },
             "ovsdb-sb": {
               "baseline_rss_mib": 2.8,
-              "peak_rss_mib": 2.91,
-              "post_del_rss_mib": 2.87,
-              "retained_rss_mib": 0.07
+              "peak_rss_mib": 2.89,
+              "post_del_rss_mib": 2.86,
+              "retained_rss_mib": 0.06
             }
           }
         }
       },
       "100": {
         "glibc": {
-          "baseline_rss_mib": 31.44,
+          "baseline_rss_mib": 27.51,
           "add_sec": 0.019,
-          "add_rate": 5380.7,
-          "add_loop_ms": 0.53,
-          "add_lflow_ms": 0,
-          "peak_rss_mib": 48.71,
+          "add_rate": 5374.6,
+          "add_loop_ms": 0.06,
+          "add_lflow_ms": 1,
+          "peak_rss_mib": 39.59,
           "del_sec": 0.019,
-          "del_loop_ms": 0,
-          "post_del_rss_mib": 47.15,
-          "retained_rss_mib": 15.71,
+          "del_loop_ms": 0.01,
+          "post_del_rss_mib": 37.51,
+          "retained_rss_mib": 10,
           "components": {
             "ovn-controller": {
-              "baseline_rss_mib": 3.61,
-              "peak_rss_mib": 9.36,
-              "post_del_rss_mib": 7.77,
-              "retained_rss_mib": 4.16
+              "baseline_rss_mib": 3.03,
+              "peak_rss_mib": 4.84,
+              "post_del_rss_mib": 6.4,
+              "retained_rss_mib": 3.37
             },
             "ovn-northd": {
-              "baseline_rss_mib": 6.65,
-              "peak_rss_mib": 9.1,
-              "post_del_rss_mib": 7.34,
-              "retained_rss_mib": 0.69
+              "baseline_rss_mib": 5.96,
+              "peak_rss_mib": 8.43,
+              "post_del_rss_mib": 6.79,
+              "retained_rss_mib": 0.83
             },
             "ovs-vswitchd": {
-              "baseline_rss_mib": 12.23,
-              "peak_rss_mib": 15.06,
-              "post_del_rss_mib": 16.83,
-              "retained_rss_mib": 4.6
+              "baseline_rss_mib": 11.77,
+              "peak_rss_mib": 13.53,
+              "post_del_rss_mib": 15.49,
+              "retained_rss_mib": 3.72
             },
             "ovsdb-nb": {
-              "baseline_rss_mib": 2.79,
-              "peak_rss_mib": 3.23,
-              "post_del_rss_mib": 3.23,
-              "retained_rss_mib": 0.44
+              "baseline_rss_mib": 2.06,
+              "peak_rss_mib": 2.53,
+              "post_del_rss_mib": 2.22,
+              "retained_rss_mib": 0.16
             },
             "ovsdb-ovs": {
-              "baseline_rss_mib": 2.75,
-              "peak_rss_mib": 4.71,
-              "post_del_rss_mib": 4.72,
-              "retained_rss_mib": 1.97
+              "baseline_rss_mib": 2.04,
+              "peak_rss_mib": 4,
+              "post_del_rss_mib": 3.15,
+              "retained_rss_mib": 1.11
             },
             "ovsdb-sb": {
-              "baseline_rss_mib": 3.41,
-              "peak_rss_mib": 7.25,
-              "post_del_rss_mib": 7.26,
-              "retained_rss_mib": 3.85
+              "baseline_rss_mib": 2.65,
+              "peak_rss_mib": 6.26,
+              "post_del_rss_mib": 3.46,
+              "retained_rss_mib": 0.81
             }
           }
         },
         "jemalloc": {
-          "baseline_rss_mib": 34.93,
-          "add_sec": 0.017,
-          "add_rate": 5978.7,
-          "add_loop_ms": 0.02,
-          "add_lflow_ms": 1,
-          "peak_rss_mib": 50.95,
-          "del_sec": 0.015,
-          "del_loop_ms": 0,
-          "post_del_rss_mib": 42.69,
-          "retained_rss_mib": 7.76,
+          "baseline_rss_mib": 31.65,
+          "add_sec": 0.018,
+          "add_rate": 5596,
+          "add_loop_ms": 0.03,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 40.12,
+          "del_sec": 0.013,
+          "del_loop_ms": 0.13,
+          "post_del_rss_mib": 38.22,
+          "retained_rss_mib": 6.57,
           "components": {
             "ovn-controller": {
-              "baseline_rss_mib": 4.36,
-              "peak_rss_mib": 10.78,
-              "post_del_rss_mib": 7.97,
-              "retained_rss_mib": 3.61
+              "baseline_rss_mib": 3.89,
+              "peak_rss_mib": 5.21,
+              "post_del_rss_mib": 6.67,
+              "retained_rss_mib": 2.78
             },
             "ovn-northd": {
-              "baseline_rss_mib": 7.49,
-              "peak_rss_mib": 9.48,
-              "post_del_rss_mib": 8.17,
-              "retained_rss_mib": 0.68
+              "baseline_rss_mib": 6.92,
+              "peak_rss_mib": 8.88,
+              "post_del_rss_mib": 7.68,
+              "retained_rss_mib": 0.76
             },
             "ovs-vswitchd": {
-              "baseline_rss_mib": 13.76,
-              "peak_rss_mib": 17.22,
-              "post_del_rss_mib": 15.89,
-              "retained_rss_mib": 2.13
+              "baseline_rss_mib": 13.36,
+              "peak_rss_mib": 14.88,
+              "post_del_rss_mib": 15.21,
+              "retained_rss_mib": 1.85
             },
             "ovsdb-nb": {
-              "baseline_rss_mib": 2.93,
-              "peak_rss_mib": 3.4,
-              "post_del_rss_mib": 3.16,
-              "retained_rss_mib": 0.23
+              "baseline_rss_mib": 2.37,
+              "peak_rss_mib": 2.82,
+              "post_del_rss_mib": 2.59,
+              "retained_rss_mib": 0.22
             },
             "ovsdb-ovs": {
-              "baseline_rss_mib": 2.93,
-              "peak_rss_mib": 4.16,
-              "post_del_rss_mib": 3.57,
-              "retained_rss_mib": 0.64
+              "baseline_rss_mib": 2.33,
+              "peak_rss_mib": 3.56,
+              "post_del_rss_mib": 2.89,
+              "retained_rss_mib": 0.56
             },
             "ovsdb-sb": {
-              "baseline_rss_mib": 3.46,
-              "peak_rss_mib": 5.91,
-              "post_del_rss_mib": 3.93,
-              "retained_rss_mib": 0.47
+              "baseline_rss_mib": 2.78,
+              "peak_rss_mib": 4.77,
+              "post_del_rss_mib": 3.18,
+              "retained_rss_mib": 0.4
             }
           }
         }
       },
-      "1000": {},
-      "10000": {}
+      "1000": {
+        "glibc": {
+          "baseline_rss_mib": 27.55,
+          "add_sec": 0.195,
+          "add_rate": 5125.8,
+          "add_loop_ms": 1.02,
+          "add_lflow_ms": 6,
+          "peak_rss_mib": 160.5,
+          "del_sec": 0.347,
+          "del_loop_ms": 0.76,
+          "post_del_rss_mib": 68.22,
+          "retained_rss_mib": 40.67,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.03,
+              "peak_rss_mib": 46.48,
+              "post_del_rss_mib": 14.71,
+              "retained_rss_mib": 11.68
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 5.97,
+              "peak_rss_mib": 29.03,
+              "post_del_rss_mib": 7.82,
+              "retained_rss_mib": 1.85
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 11.77,
+              "peak_rss_mib": 30.88,
+              "post_del_rss_mib": 32.26,
+              "retained_rss_mib": 20.49
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 7,
+              "post_del_rss_mib": 3.15,
+              "retained_rss_mib": 1.06
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.04,
+              "peak_rss_mib": 14.23,
+              "post_del_rss_mib": 4.83,
+              "retained_rss_mib": 2.79
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.65,
+              "peak_rss_mib": 32.88,
+              "post_del_rss_mib": 5.45,
+              "retained_rss_mib": 2.8
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 31.69,
+          "add_sec": 0.174,
+          "add_rate": 5736.3,
+          "add_loop_ms": 0.26,
+          "add_lflow_ms": 6,
+          "peak_rss_mib": 149.79,
+          "del_sec": 0.277,
+          "del_loop_ms": 0.07,
+          "post_del_rss_mib": 50.36,
+          "retained_rss_mib": 18.67,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.89,
+              "peak_rss_mib": 52.63,
+              "post_del_rss_mib": 13.17,
+              "retained_rss_mib": 9.28
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.95,
+              "peak_rss_mib": 24.84,
+              "post_del_rss_mib": 9.23,
+              "retained_rss_mib": 2.28
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.35,
+              "peak_rss_mib": 34.91,
+              "post_del_rss_mib": 18.62,
+              "retained_rss_mib": 5.27
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.38,
+              "peak_rss_mib": 5.11,
+              "post_del_rss_mib": 2.98,
+              "retained_rss_mib": 0.6
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.33,
+              "peak_rss_mib": 11.7,
+              "post_del_rss_mib": 2.71,
+              "retained_rss_mib": 0.38
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.79,
+              "peak_rss_mib": 20.6,
+              "post_del_rss_mib": 3.65,
+              "retained_rss_mib": 0.86
+            }
+          }
+        }
+      },
+      "10000": {
+        "glibc": {
+          "baseline_rss_mib": 27.57,
+          "add_sec": 2.827,
+          "add_rate": 3536.9,
+          "add_loop_ms": 9,
+          "add_lflow_ms": 170,
+          "peak_rss_mib": 1238.35,
+          "del_sec": 18.718,
+          "del_loop_ms": 0.05,
+          "post_del_rss_mib": 490.11,
+          "retained_rss_mib": 462.54,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.04,
+              "peak_rss_mib": 412.63,
+              "post_del_rss_mib": 210.24,
+              "retained_rss_mib": 207.2
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 5.97,
+              "peak_rss_mib": 226.26,
+              "post_del_rss_mib": 11.63,
+              "retained_rss_mib": 5.66
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 11.77,
+              "peak_rss_mib": 117.43,
+              "post_del_rss_mib": 144.86,
+              "retained_rss_mib": 133.09
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.1,
+              "peak_rss_mib": 45.88,
+              "post_del_rss_mib": 3.82,
+              "retained_rss_mib": 1.72
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.04,
+              "peak_rss_mib": 119.35,
+              "post_del_rss_mib": 112.83,
+              "retained_rss_mib": 110.79
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.65,
+              "peak_rss_mib": 316.8,
+              "post_del_rss_mib": 6.73,
+              "retained_rss_mib": 4.08
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 31.63,
+          "add_sec": 2.472,
+          "add_rate": 4045.1,
+          "add_loop_ms": 3.08,
+          "add_lflow_ms": 126,
+          "peak_rss_mib": 1049.73,
+          "del_sec": 14.336,
+          "del_loop_ms": 0.02,
+          "post_del_rss_mib": 264.76,
+          "retained_rss_mib": 233.13,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.89,
+              "peak_rss_mib": 441.67,
+              "post_del_rss_mib": 104.84,
+              "retained_rss_mib": 100.95
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.88,
+              "peak_rss_mib": 187.88,
+              "post_del_rss_mib": 12.68,
+              "retained_rss_mib": 5.8
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.35,
+              "peak_rss_mib": 120.31,
+              "post_del_rss_mib": 126.3,
+              "retained_rss_mib": 112.95
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.38,
+              "peak_rss_mib": 26.76,
+              "post_del_rss_mib": 3.73,
+              "retained_rss_mib": 1.35
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.34,
+              "peak_rss_mib": 85.41,
+              "post_del_rss_mib": 7.96,
+              "retained_rss_mib": 5.62
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.79,
+              "peak_rss_mib": 187.7,
+              "post_del_rss_mib": 9.25,
+              "retained_rss_mib": 6.46
+            }
+          }
+        }
+      }
     },
     "port_group": {
-      "1": {},
-      "10": {},
-      "100": {},
-      "1000": {},
-      "10000": {}
+      "1": {
+        "glibc": {
+          "baseline_rss_mib": 27.51,
+          "add_sec": 0.011,
+          "add_rate": 90.1,
+          "add_loop_ms": 0,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 29.28,
+          "del_sec": 0.009,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 28.64,
+          "retained_rss_mib": 1.13,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.04,
+              "peak_rss_mib": 4.35,
+              "post_del_rss_mib": 4.05,
+              "retained_rss_mib": 1.01
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 5.96,
+              "peak_rss_mib": 6.06,
+              "post_del_rss_mib": 6.01,
+              "retained_rss_mib": 0.05
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 11.77,
+              "peak_rss_mib": 12.13,
+              "post_del_rss_mib": 12.15,
+              "retained_rss_mib": 0.38
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.06,
+              "peak_rss_mib": 2.06,
+              "post_del_rss_mib": 1.96,
+              "retained_rss_mib": -0.1
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.03,
+              "peak_rss_mib": 2.03,
+              "post_del_rss_mib": 1.95,
+              "retained_rss_mib": -0.08
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.65,
+              "peak_rss_mib": 2.65,
+              "post_del_rss_mib": 2.52,
+              "retained_rss_mib": -0.13
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 31.69,
+          "add_sec": 0.012,
+          "add_rate": 83.8,
+          "add_loop_ms": 0.13,
+          "add_lflow_ms": 1,
+          "peak_rss_mib": 33.46,
+          "del_sec": 0.009,
+          "del_loop_ms": 0.13,
+          "post_del_rss_mib": 33.2,
+          "retained_rss_mib": 1.51,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.89,
+              "peak_rss_mib": 5.18,
+              "post_del_rss_mib": 4.9,
+              "retained_rss_mib": 1.01
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.92,
+              "peak_rss_mib": 6.97,
+              "post_del_rss_mib": 7,
+              "retained_rss_mib": 0.08
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.35,
+              "peak_rss_mib": 13.71,
+              "post_del_rss_mib": 13.71,
+              "retained_rss_mib": 0.36
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.37,
+              "peak_rss_mib": 2.35,
+              "post_del_rss_mib": 2.36,
+              "retained_rss_mib": -0.01
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.34,
+              "peak_rss_mib": 2.35,
+              "post_del_rss_mib": 2.41,
+              "retained_rss_mib": 0.07
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.82,
+              "peak_rss_mib": 2.9,
+              "post_del_rss_mib": 2.82,
+              "retained_rss_mib": 0
+            }
+          }
+        }
+      },
+      "10": {
+        "glibc": {
+          "baseline_rss_mib": 27.55,
+          "add_sec": 0.013,
+          "add_rate": 775.6,
+          "add_loop_ms": 0.13,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 30.5,
+          "del_sec": 0.01,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 30.1,
+          "retained_rss_mib": 2.55,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.04,
+              "peak_rss_mib": 4.75,
+              "post_del_rss_mib": 4.64,
+              "retained_rss_mib": 1.6
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 5.96,
+              "peak_rss_mib": 6.22,
+              "post_del_rss_mib": 6.13,
+              "retained_rss_mib": 0.17
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 11.76,
+              "peak_rss_mib": 12.55,
+              "post_del_rss_mib": 12.58,
+              "retained_rss_mib": 0.82
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 2.09,
+              "post_del_rss_mib": 2.01,
+              "retained_rss_mib": -0.08
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.04,
+              "peak_rss_mib": 2.1,
+              "post_del_rss_mib": 2.07,
+              "retained_rss_mib": 0.03
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.66,
+              "peak_rss_mib": 2.79,
+              "post_del_rss_mib": 2.67,
+              "retained_rss_mib": 0.01
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 31.66,
+          "add_sec": 0.013,
+          "add_rate": 774.2,
+          "add_loop_ms": 0,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 34.9,
+          "del_sec": 0.01,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 34.66,
+          "retained_rss_mib": 3,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.89,
+              "peak_rss_mib": 5.73,
+              "post_del_rss_mib": 5.48,
+              "retained_rss_mib": 1.59
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.91,
+              "peak_rss_mib": 7.25,
+              "post_del_rss_mib": 7.25,
+              "retained_rss_mib": 0.34
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.34,
+              "peak_rss_mib": 14.09,
+              "post_del_rss_mib": 14.06,
+              "retained_rss_mib": 0.72
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.37,
+              "peak_rss_mib": 2.4,
+              "post_del_rss_mib": 2.42,
+              "retained_rss_mib": 0.05
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.34,
+              "peak_rss_mib": 2.47,
+              "post_del_rss_mib": 2.54,
+              "retained_rss_mib": 0.2
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.81,
+              "peak_rss_mib": 2.96,
+              "post_del_rss_mib": 2.91,
+              "retained_rss_mib": 0.1
+            }
+          }
+        }
+      },
+      "100": {
+        "glibc": {
+          "baseline_rss_mib": 27.56,
+          "add_sec": 0.025,
+          "add_rate": 3984.2,
+          "add_loop_ms": 0.04,
+          "add_lflow_ms": 1,
+          "peak_rss_mib": 43.07,
+          "del_sec": 0.021,
+          "del_loop_ms": 0.04,
+          "post_del_rss_mib": 38.59,
+          "retained_rss_mib": 11.03,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.04,
+              "peak_rss_mib": 7.64,
+              "post_del_rss_mib": 6.88,
+              "retained_rss_mib": 3.84
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 5.97,
+              "peak_rss_mib": 8.45,
+              "post_del_rss_mib": 7.11,
+              "retained_rss_mib": 1.14
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 11.77,
+              "peak_rss_mib": 14.15,
+              "post_del_rss_mib": 15.49,
+              "retained_rss_mib": 3.72
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.09,
+              "peak_rss_mib": 2.57,
+              "post_del_rss_mib": 2.24,
+              "retained_rss_mib": 0.15
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.03,
+              "peak_rss_mib": 3.99,
+              "post_del_rss_mib": 3.02,
+              "retained_rss_mib": 0.99
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.66,
+              "peak_rss_mib": 6.27,
+              "post_del_rss_mib": 3.85,
+              "retained_rss_mib": 1.19
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 31.68,
+          "add_sec": 0.023,
+          "add_rate": 4308.7,
+          "add_loop_ms": 0.01,
+          "add_lflow_ms": 0,
+          "peak_rss_mib": 42.71,
+          "del_sec": 0.017,
+          "del_loop_ms": 0.25,
+          "post_del_rss_mib": 39.55,
+          "retained_rss_mib": 7.87,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.89,
+              "peak_rss_mib": 7.25,
+              "post_del_rss_mib": 7.3,
+              "retained_rss_mib": 3.41
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.93,
+              "peak_rss_mib": 9,
+              "post_del_rss_mib": 8.1,
+              "retained_rss_mib": 1.17
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.35,
+              "peak_rss_mib": 15.1,
+              "post_del_rss_mib": 15.27,
+              "retained_rss_mib": 1.92
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.38,
+              "peak_rss_mib": 2.85,
+              "post_del_rss_mib": 2.66,
+              "retained_rss_mib": 0.28
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.34,
+              "peak_rss_mib": 3.59,
+              "post_del_rss_mib": 2.91,
+              "retained_rss_mib": 0.57
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.79,
+              "peak_rss_mib": 4.92,
+              "post_del_rss_mib": 3.31,
+              "retained_rss_mib": 0.52
+            }
+          }
+        }
+      },
+      "1000": {
+        "glibc": {
+          "baseline_rss_mib": 27.57,
+          "add_sec": 0.49,
+          "add_rate": 2042,
+          "add_loop_ms": 0.33,
+          "add_lflow_ms": 6,
+          "peak_rss_mib": 167.58,
+          "del_sec": 0.311,
+          "del_loop_ms": 0.04,
+          "post_del_rss_mib": 68.19,
+          "retained_rss_mib": 40.62,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.04,
+              "peak_rss_mib": 54.08,
+              "post_del_rss_mib": 14.17,
+              "retained_rss_mib": 11.13
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 5.97,
+              "peak_rss_mib": 28.71,
+              "post_del_rss_mib": 8.4,
+              "retained_rss_mib": 2.43
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 11.77,
+              "peak_rss_mib": 29.02,
+              "post_del_rss_mib": 30.73,
+              "retained_rss_mib": 18.96
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.1,
+              "peak_rss_mib": 7,
+              "post_del_rss_mib": 3.32,
+              "retained_rss_mib": 1.22
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.03,
+              "peak_rss_mib": 14.34,
+              "post_del_rss_mib": 5.75,
+              "retained_rss_mib": 3.72
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.66,
+              "peak_rss_mib": 34.43,
+              "post_del_rss_mib": 5.82,
+              "retained_rss_mib": 3.16
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 31.68,
+          "add_sec": 0.495,
+          "add_rate": 2019.5,
+          "add_loop_ms": 0.74,
+          "add_lflow_ms": 5,
+          "peak_rss_mib": 143.99,
+          "del_sec": 0.244,
+          "del_loop_ms": 0,
+          "post_del_rss_mib": 48.92,
+          "retained_rss_mib": 17.24,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.89,
+              "peak_rss_mib": 50.27,
+              "post_del_rss_mib": 12.22,
+              "retained_rss_mib": 8.33
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.92,
+              "peak_rss_mib": 24.89,
+              "post_del_rss_mib": 9.63,
+              "retained_rss_mib": 2.71
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.35,
+              "peak_rss_mib": 30.9,
+              "post_del_rss_mib": 17.38,
+              "retained_rss_mib": 4.03
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.38,
+              "peak_rss_mib": 5.09,
+              "post_del_rss_mib": 3.07,
+              "retained_rss_mib": 0.69
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.34,
+              "peak_rss_mib": 11.75,
+              "post_del_rss_mib": 2.78,
+              "retained_rss_mib": 0.44
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.8,
+              "peak_rss_mib": 21.09,
+              "post_del_rss_mib": 3.84,
+              "retained_rss_mib": 1.04
+            }
+          }
+        }
+      },
+      "10000": {
+        "glibc": {
+          "baseline_rss_mib": 27.58,
+          "add_sec": 74.004,
+          "add_rate": 135.1,
+          "add_loop_ms": 4,
+          "add_lflow_ms": 132,
+          "peak_rss_mib": 1261.76,
+          "del_sec": 17.02,
+          "del_loop_ms": 0.59,
+          "post_del_rss_mib": 376.28,
+          "retained_rss_mib": 348.7,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.05,
+              "peak_rss_mib": 412.49,
+              "post_del_rss_mib": 89.49,
+              "retained_rss_mib": 86.44
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 5.97,
+              "peak_rss_mib": 227.25,
+              "post_del_rss_mib": 12.08,
+              "retained_rss_mib": 6.11
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 11.77,
+              "peak_rss_mib": 122.82,
+              "post_del_rss_mib": 152.2,
+              "retained_rss_mib": 140.43
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.1,
+              "peak_rss_mib": 46.4,
+              "post_del_rss_mib": 3.74,
+              "retained_rss_mib": 1.64
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.04,
+              "peak_rss_mib": 119.73,
+              "post_del_rss_mib": 111.86,
+              "retained_rss_mib": 109.82
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.65,
+              "peak_rss_mib": 333.07,
+              "post_del_rss_mib": 6.91,
+              "retained_rss_mib": 4.26
+            }
+          }
+        },
+        "jemalloc": {
+          "baseline_rss_mib": 31.7,
+          "add_sec": 66.561,
+          "add_rate": 150.2,
+          "add_loop_ms": 3.38,
+          "add_lflow_ms": 113,
+          "peak_rss_mib": 1001.45,
+          "del_sec": 13.615,
+          "del_loop_ms": 0.02,
+          "post_del_rss_mib": 206.82,
+          "retained_rss_mib": 175.12,
+          "components": {
+            "ovn-controller": {
+              "baseline_rss_mib": 3.9,
+              "peak_rss_mib": 393.89,
+              "post_del_rss_mib": 46.25,
+              "retained_rss_mib": 42.35
+            },
+            "ovn-northd": {
+              "baseline_rss_mib": 6.93,
+              "peak_rss_mib": 188.59,
+              "post_del_rss_mib": 12.99,
+              "retained_rss_mib": 6.06
+            },
+            "ovs-vswitchd": {
+              "baseline_rss_mib": 13.35,
+              "peak_rss_mib": 117.82,
+              "post_del_rss_mib": 124.46,
+              "retained_rss_mib": 111.11
+            },
+            "ovsdb-nb": {
+              "baseline_rss_mib": 2.38,
+              "peak_rss_mib": 29.78,
+              "post_del_rss_mib": 4.34,
+              "retained_rss_mib": 1.96
+            },
+            "ovsdb-ovs": {
+              "baseline_rss_mib": 2.33,
+              "peak_rss_mib": 82.57,
+              "post_del_rss_mib": 9.49,
+              "retained_rss_mib": 7.16
+            },
+            "ovsdb-sb": {
+              "baseline_rss_mib": 2.81,
+              "peak_rss_mib": 188.8,
+              "post_del_rss_mib": 9.29,
+              "retained_rss_mib": 6.48
+            }
+          }
+        }
+      }
     }
   },
   "system": {

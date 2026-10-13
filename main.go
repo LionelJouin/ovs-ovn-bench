@@ -478,7 +478,12 @@ func (e *OVNEnvironment) Start() error {
 	_ = exec.Command(e.ovsdbTool, "create", filepath.Join(e.testDir, "ovs.db"), ovsSchema).Run()
 
 	envVars := os.Environ()
-	envVars = append(envVars, "OVS_RUNDIR="+e.testDir, "OVS_LOGDIR="+e.testDir)
+	envVars = append(envVars,
+		"OVS_RUNDIR="+e.testDir,
+		"OVS_LOGDIR="+e.testDir,
+		"OVN_RUNDIR="+e.testDir,
+		"OVN_LOGDIR="+e.testDir,
+	)
 	if e.alloc == "jemalloc" {
 		jlib := findJemallocLib()
 		if jlib == "" {
@@ -522,6 +527,12 @@ func (e *OVNEnvironment) Start() error {
 	}
 
 	time.Sleep(100 * time.Millisecond)
+
+	// Enable memory trimming on compaction across all 3 OVSDB servers
+	for _, ctl := range []string{"nb.ctl", "sb.ctl", "ovs.ctl"} {
+		ctlPath := filepath.Join(e.testDir, ctl)
+		_ = exec.Command(e.ovnAppctl, "-t", ctlPath, "ovsdb-server/memory-trim-on-compaction", "on").Run()
+	}
 
 	_ = exec.Command(e.ovnNbctl, "--db="+e.nbSock, "init").Run()
 	_ = exec.Command(e.ovsVsctl, "--db="+e.ovsSock, "--no-wait", "init").Run()
@@ -765,6 +776,17 @@ func (e *OVNEnvironment) Sync() {
 	_ = exec.Command(e.ovnNbctl, "--db="+e.nbSock, "--wait=sb", "sync").Run()
 }
 
+func (e *OVNEnvironment) TrimMemory() {
+	// Trigger database compaction and malloc_trim(0) on all 3 OVSDB servers
+	for _, ctl := range []string{"nb.ctl", "sb.ctl", "ovs.ctl"} {
+		ctlPath := filepath.Join(e.testDir, ctl)
+		_ = exec.Command(e.ovnAppctl, "-t", ctlPath, "ovsdb-server/compact").Run()
+	}
+	// Purge datapath flow cache on ovs-vswitchd
+	vswCtl := filepath.Join(e.testDir, "vswitchd.ctl")
+	_ = exec.Command(e.ovnAppctl, "-t", vswCtl, "revalidator/purge").Run()
+}
+
 func (e *OVNEnvironment) Recompute() (wallMs, loopMs, lflowMs float64) {
 	_ = exec.Command(e.ovnAppctl, "-t", filepath.Join(e.testDir, "northd.ctl"), "stopwatch/reset").Run()
 	t0 := time.Now()
@@ -970,6 +992,7 @@ func benchPort(env *OVNEnvironment, n int) BenchResult {
 	delSec := float64(time.Since(t1).Microseconds()) / 1e6
 
 	_, delLoop, _ := env.Recompute()
+	env.TrimMemory()
 	time.Sleep(env.decayWaitTime())
 	postDel := env.sampleMemory()
 
@@ -1043,6 +1066,7 @@ func benchACL(env *OVNEnvironment, n int) BenchResult {
 	delSec := float64(time.Since(t1).Microseconds()) / 1e6
 
 	_, delLoop, _ := env.Recompute()
+	env.TrimMemory()
 	time.Sleep(env.decayWaitTime())
 	postDel := env.sampleMemory()
 
@@ -1117,6 +1141,7 @@ func benchAddressSet(env *OVNEnvironment, n int) BenchResult {
 	delSec := float64(time.Since(t1).Microseconds()) / 1e6
 
 	_, delLoop, _ := env.Recompute()
+	env.TrimMemory()
 	time.Sleep(env.decayWaitTime())
 	postDel := env.sampleMemory()
 
@@ -1233,6 +1258,7 @@ func benchPortGroup(env *OVNEnvironment, n int) BenchResult {
 	delSec := float64(time.Since(t1).Microseconds()) / 1e6
 
 	_, delLoop, _ := env.Recompute()
+	env.TrimMemory()
 	time.Sleep(env.decayWaitTime())
 	postDel := env.sampleMemory()
 
@@ -1307,6 +1333,7 @@ func benchLoadBalancer(env *OVNEnvironment, n int) BenchResult {
 	delSec := float64(time.Since(t1).Microseconds()) / 1e6
 
 	_, delLoop, _ := env.Recompute()
+	env.TrimMemory()
 	time.Sleep(env.decayWaitTime())
 	postDel := env.sampleMemory()
 
@@ -1348,6 +1375,7 @@ func benchFlow(env *OVNEnvironment, n int) BenchResult {
 	}
 	delSec := float64(time.Since(t1).Microseconds()) / 1e6
 
+	env.TrimMemory()
 	time.Sleep(env.decayWaitTime())
 	postDel := env.sampleMemory()
 
@@ -1592,6 +1620,7 @@ func benchCombined(env *OVNEnvironment, n int) BenchResult {
 	delSec := float64(time.Since(t1).Microseconds()) / 1e6
 
 	_, delLoop, _ := env.Recompute()
+	env.TrimMemory()
 	time.Sleep(env.decayWaitTime())
 	postDel := env.sampleMemory()
 

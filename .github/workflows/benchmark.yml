@@ -64,6 +64,7 @@ jobs:
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,format=short
+            type=sha,format=short,prefix=
 
       - name: Build and push container image
         uses: docker/build-push-action@v5
@@ -99,7 +100,7 @@ jobs:
             docker build -t ovs-ovn-bench:local .
             echo "image=ovs-ovn-bench:local" >> "$GITHUB_OUTPUT"
           else
-            echo "image=${REPO_LC}:${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+            echo "image=${REPO_LC}:sha-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Run benchmark in container
@@ -156,7 +157,7 @@ jobs:
             docker build -t ovs-ovn-bench:local .
             echo "image=ovs-ovn-bench:local" >> "$GITHUB_OUTPUT"
           else
-            echo "image=${REPO_LC}:${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+            echo "image=${REPO_LC}:sha-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Run multi-iteration benchmark in container

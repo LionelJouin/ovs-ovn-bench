@@ -99,6 +99,16 @@ OVN provides native memory trimming capabilities designed to mitigate glibc memo
 * **`external_ids:ovn-trim-wmark-perc-lflow-cache`**:
   * High-watermark percentage (default `50`%). If the logical flow cache size falls below this percentage of its historical peak, automatic memory trimming is triggered immediately upon cache reduction rather than waiting for inactivity.
 
+### 3. `ovsdb-server` Compaction Trimming
+* **`ovsdb-server/memory-trim-on-compaction on`**:
+  * Configures `ovsdb-server` (NB, SB, and OVS) to invoke `malloc_trim(0)` immediately following database snapshot compaction.
+* **`ovsdb-server/compact`**:
+  * Forces an immediate database compaction and memory trim across `ovsdb-server` instances.
+
+### 4. `ovs-vswitchd` Flow Cache Purging
+* **`revalidator/purge`**:
+  * Flushes cached megaflows from userspace flow tables in `ovs-vswitchd` upon workload deletion.
+
 ---
 
 ## Using `LD_PRELOAD` on OVN-Kubernetes
