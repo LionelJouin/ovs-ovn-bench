@@ -249,7 +249,7 @@ func killPidFile(path string) {
 // ---------------------------------------------------------------------------
 
 const (
-	defaultJemallocConf = "background_thread:true,dirty_decay_ms:1000,muzzy_decay_ms:1000"
+	defaultJemallocConf = "background_thread:true,dirty_decay_ms:0,muzzy_decay_ms:0"
 	decayWaitTime       = 5 * time.Second
 )
 
@@ -407,7 +407,16 @@ func (e *OVNEnvironment) Start() error {
 }
 
 func (e *OVNEnvironment) Transact(ctx context.Context, ops ...ovsdb.Operation) ([]ovsdb.OperationResult, error) {
-	return e.ovsdbClient.Transact(ctx, ops...)
+	res, err := e.ovsdbClient.Transact(ctx, ops...)
+	if err != nil {
+		fmt.Printf("  [libovsdb] Transact error: %v\n", err)
+	}
+	for i, r := range res {
+		if r.Error != "" {
+			fmt.Printf("  [libovsdb] Op %d failed: %s (%s)\n", i, r.Error, r.Details)
+		}
+	}
+	return res, err
 }
 
 func (e *OVNEnvironment) Sync() {
@@ -500,30 +509,22 @@ func benchPort(env *OVNEnvironment, n int) BenchResult {
 	_, addLoop, addLflow := env.Recompute()
 	peak := getProcMem(env.northdPid)
 
-	// Phase 3: Remove N ports from switch and delete
+	// Phase 3: Remove N ports from switch and delete rows
 	t1 := time.Now()
-	for i := 0; i < n; i += chunkSize {
-		end := i + chunkSize
-		if end > n {
-			end = n
-		}
-		chunkLen := end - i
-		ports := make([]model.Model, chunkLen)
-		for j := 0; j < chunkLen; j++ {
-			idx := i + j
-			ports[j] = &LogicalSwitchPort{
-				Name: fmt.Sprintf("p-%d", idx),
-			}
-		}
-		delOps, _ := env.ovsdbClient.Where(ports...).Delete()
-		_, _ = env.Transact(ctx, delOps...)
+	clearSwOp := ovsdb.Operation{
+		Op:    "update",
+		Table: "Logical_Switch",
+		Where: []ovsdb.Condition{ovsdb.NewCondition("name", ovsdb.ConditionEqual, "bench-ls")},
+		Row: map[string]interface{}{
+			"ports": ovsdb.OvsSet{GoSet: []interface{}{}},
+		},
 	}
-	clearOps, _ := env.ovsdbClient.Where(sw).Mutate(sw, model.Mutation{
-		Field:   &sw.Ports,
-		Mutator: ovsdb.MutateOperationDelete,
-		Value:   sw.Ports,
-	})
-	_, _ = env.Transact(ctx, clearOps...)
+	delPortOp := ovsdb.Operation{
+		Op:    "delete",
+		Table: "Logical_Switch_Port",
+		Where: []ovsdb.Condition{ovsdb.NewCondition("name", ovsdb.ConditionNotEqual, "")},
+	}
+	_, _ = env.Transact(ctx, clearSwOp, delPortOp)
 	env.Sync()
 	delSec := float64(time.Since(t1).Microseconds()) / 1e6
 
@@ -595,34 +596,22 @@ func benchACL(env *OVNEnvironment, n int) BenchResult {
 	_, addLoop, addLflow := env.Recompute()
 	peak := getProcMem(env.northdPid)
 
-	// Phase 3: Remove N ACLs from switch and delete
+	// Phase 3: Remove N ACLs from switch and delete rows
 	t1 := time.Now()
-	for i := 0; i < n; i += chunkSize {
-		end := i + chunkSize
-		if end > n {
-			end = n
-		}
-		chunkLen := end - i
-		acls := make([]model.Model, chunkLen)
-		for j := 0; j < chunkLen; j++ {
-			idx := i + j
-			match := fmt.Sprintf("ip4.src == 10.%d.%d.1 && tcp.dst == %d", (idx>>8)&255, idx&255, 1000+(idx%1000))
-			acls[j] = &ACL{
-				Action:    "allow-related",
-				Direction: "to-lport",
-				Priority:  1000 + (idx % 500),
-				Match:     match,
-			}
-		}
-		delOps, _ := env.ovsdbClient.Where(acls...).Delete()
-		_, _ = env.Transact(ctx, delOps...)
+	clearSwOp := ovsdb.Operation{
+		Op:    "update",
+		Table: "Logical_Switch",
+		Where: []ovsdb.Condition{ovsdb.NewCondition("name", ovsdb.ConditionEqual, "bench-ls")},
+		Row: map[string]interface{}{
+			"acls": ovsdb.OvsSet{GoSet: []interface{}{}},
+		},
 	}
-	clearOps, _ := env.ovsdbClient.Where(sw).Mutate(sw, model.Mutation{
-		Field:   &sw.ACLs,
-		Mutator: ovsdb.MutateOperationDelete,
-		Value:   sw.ACLs,
-	})
-	_, _ = env.Transact(ctx, clearOps...)
+	delAclOp := ovsdb.Operation{
+		Op:    "delete",
+		Table: "ACL",
+		Where: []ovsdb.Condition{ovsdb.NewCondition("priority", ovsdb.ConditionGreaterThanOrEqual, 0)},
+	}
+	_, _ = env.Transact(ctx, clearSwOp, delAclOp)
 	env.Sync()
 	delSec := float64(time.Since(t1).Microseconds()) / 1e6
 
@@ -692,16 +681,25 @@ func benchAddressSet(env *OVNEnvironment, n int) BenchResult {
 
 	// Phase 3: Remove Address Set & ACL
 	t1 := time.Now()
-	delAs, _ := env.ovsdbClient.Where(as).Delete()
-	delAcl, _ := env.ovsdbClient.Where(acl).Delete()
-	clearOps, _ := env.ovsdbClient.Where(sw).Mutate(sw, model.Mutation{
-		Field:   &sw.ACLs,
-		Mutator: ovsdb.MutateOperationDelete,
-		Value:   sw.ACLs,
-	})
-	delAll := append(delAs, delAcl...)
-	delAll = append(delAll, clearOps...)
-	_, _ = env.Transact(ctx, delAll...)
+	clearSwOp := ovsdb.Operation{
+		Op:    "update",
+		Table: "Logical_Switch",
+		Where: []ovsdb.Condition{ovsdb.NewCondition("name", ovsdb.ConditionEqual, "bench-ls")},
+		Row: map[string]interface{}{
+			"acls": ovsdb.OvsSet{GoSet: []interface{}{}},
+		},
+	}
+	delAsOp := ovsdb.Operation{
+		Op:    "delete",
+		Table: "Address_Set",
+		Where: []ovsdb.Condition{ovsdb.NewCondition("name", ovsdb.ConditionNotEqual, "")},
+	}
+	delAclOp := ovsdb.Operation{
+		Op:    "delete",
+		Table: "ACL",
+		Where: []ovsdb.Condition{ovsdb.NewCondition("priority", ovsdb.ConditionGreaterThanOrEqual, 0)},
+	}
+	_, _ = env.Transact(ctx, clearSwOp, delAsOp, delAclOp)
 	env.Sync()
 	delSec := float64(time.Since(t1).Microseconds()) / 1e6
 
@@ -732,6 +730,7 @@ func benchPortGroup(env *OVNEnvironment, n int) BenchResult {
 		sw.UUID = resSw[0].UUID.GoUUID
 	}
 
+	var allPortUUIDs []string
 	chunkSize := 300
 	for i := 0; i < n; i += chunkSize {
 		end := i + chunkSize
@@ -756,7 +755,12 @@ func benchPortGroup(env *OVNEnvironment, n int) BenchResult {
 			Mutator: ovsdb.MutateOperationInsert,
 			Value:   namedUUIDs,
 		})
-		_, _ = env.Transact(ctx, append(opsPorts, mutateOps...)...)
+		res, _ := env.Transact(ctx, append(opsPorts, mutateOps...)...)
+		for j := 0; j < chunkLen; j++ {
+			if j < len(res) && res[j].UUID.GoUUID != "" {
+				allPortUUIDs = append(allPortUUIDs, res[j].UUID.GoUUID)
+			}
+		}
 	}
 	env.Sync()
 	env.Recompute()
@@ -764,10 +768,6 @@ func benchPortGroup(env *OVNEnvironment, n int) BenchResult {
 
 	// Phase 2: Create Port_Group with N ports and attach ACL via libovsdb
 	t0 := time.Now()
-	pNames := make([]string, n)
-	for i := 0; i < n; i++ {
-		pNames[i] = fmt.Sprintf("p-%d", i)
-	}
 	acl := &ACL{
 		UUID:      "acl_pg",
 		Action:    "allow-related",
@@ -777,7 +777,7 @@ func benchPortGroup(env *OVNEnvironment, n int) BenchResult {
 	}
 	pg := &PortGroup{
 		Name:  "bench_pg",
-		Ports: pNames,
+		Ports: allPortUUIDs,
 		ACLs:  []string{"acl_pg"},
 	}
 	opsPg, _ := env.ovsdbClient.Create(pg)
@@ -791,29 +791,30 @@ func benchPortGroup(env *OVNEnvironment, n int) BenchResult {
 
 	// Phase 3: Remove Port_Group & ACL & Ports
 	t1 := time.Now()
-	delPg, _ := env.ovsdbClient.Where(pg).Delete()
-	delAcl, _ := env.ovsdbClient.Where(acl).Delete()
-	_, _ = env.Transact(ctx, append(delPg, delAcl...)...)
-
-	for i := 0; i < n; i += chunkSize {
-		end := i + chunkSize
-		if end > n {
-			end = n
-		}
-		chunkLen := end - i
-		ports := make([]model.Model, chunkLen)
-		for j := 0; j < chunkLen; j++ {
-			ports[j] = &LogicalSwitchPort{Name: fmt.Sprintf("p-%d", i+j)}
-		}
-		delOps, _ := env.ovsdbClient.Where(ports...).Delete()
-		_, _ = env.Transact(ctx, delOps...)
+	clearSwOp := ovsdb.Operation{
+		Op:    "update",
+		Table: "Logical_Switch",
+		Where: []ovsdb.Condition{ovsdb.NewCondition("name", ovsdb.ConditionEqual, "bench-ls")},
+		Row: map[string]interface{}{
+			"ports": ovsdb.OvsSet{GoSet: []interface{}{}},
+		},
 	}
-	clearOps, _ := env.ovsdbClient.Where(sw).Mutate(sw, model.Mutation{
-		Field:   &sw.Ports,
-		Mutator: ovsdb.MutateOperationDelete,
-		Value:   sw.Ports,
-	})
-	_, _ = env.Transact(ctx, clearOps...)
+	delPgOp := ovsdb.Operation{
+		Op:    "delete",
+		Table: "Port_Group",
+		Where: []ovsdb.Condition{ovsdb.NewCondition("name", ovsdb.ConditionNotEqual, "")},
+	}
+	delAclOp := ovsdb.Operation{
+		Op:    "delete",
+		Table: "ACL",
+		Where: []ovsdb.Condition{ovsdb.NewCondition("priority", ovsdb.ConditionGreaterThanOrEqual, 0)},
+	}
+	delPortOp := ovsdb.Operation{
+		Op:    "delete",
+		Table: "Logical_Switch_Port",
+		Where: []ovsdb.Condition{ovsdb.NewCondition("name", ovsdb.ConditionNotEqual, "")},
+	}
+	_, _ = env.Transact(ctx, clearSwOp, delPgOp, delAclOp, delPortOp)
 	env.Sync()
 	delSec := float64(time.Since(t1).Microseconds()) / 1e6
 
@@ -886,35 +887,22 @@ func benchLoadBalancer(env *OVNEnvironment, n int) BenchResult {
 	_, addLoop, addLflow := env.Recompute()
 	peak := getProcMem(env.northdPid)
 
-	// Phase 3: Remove N Load Balancers
+	// Phase 3: Remove N Load Balancers from switch and delete rows
 	t1 := time.Now()
-	for i := 0; i < n; i += chunkSize {
-		end := i + chunkSize
-		if end > n {
-			end = n
-		}
-		chunkLen := end - i
-		lbs := make([]model.Model, chunkLen)
-		for j := 0; j < chunkLen; j++ {
-			idx := i + j
-			proto := "tcp"
-			vip := fmt.Sprintf("10.96.%d.%d:80", (idx/250)&255, (idx%250)+1)
-			backends := "10.244.0.1:8080,10.244.0.2:8080"
-			lbs[j] = &LoadBalancer{
-				Name:     fmt.Sprintf("lb-%d", idx),
-				Protocol: &proto,
-				Vips:     map[string]string{vip: backends},
-			}
-		}
-		delOps, _ := env.ovsdbClient.Where(lbs...).Delete()
-		_, _ = env.Transact(ctx, delOps...)
+	clearSwOp := ovsdb.Operation{
+		Op:    "update",
+		Table: "Logical_Switch",
+		Where: []ovsdb.Condition{ovsdb.NewCondition("name", ovsdb.ConditionEqual, "bench-ls")},
+		Row: map[string]interface{}{
+			"load_balancer": ovsdb.OvsSet{GoSet: []interface{}{}},
+		},
 	}
-	clearOps, _ := env.ovsdbClient.Where(sw).Mutate(sw, model.Mutation{
-		Field:   &sw.LoadBalancer,
-		Mutator: ovsdb.MutateOperationDelete,
-		Value:   sw.LoadBalancer,
-	})
-	_, _ = env.Transact(ctx, clearOps...)
+	delLbOp := ovsdb.Operation{
+		Op:    "delete",
+		Table: "Load_Balancer",
+		Where: []ovsdb.Condition{ovsdb.NewCondition("name", ovsdb.ConditionNotEqual, "")},
+	}
+	_, _ = env.Transact(ctx, clearSwOp, delLbOp)
 	env.Sync()
 	delSec := float64(time.Since(t1).Microseconds()) / 1e6
 
@@ -1270,54 +1258,32 @@ func benchCombined(env *OVNEnvironment, n int) BenchResult {
 
 	// Phase 3: Remove all via libovsdb
 	t1 := time.Now()
-	for i := 0; i < nPorts; i += chunkSize {
-		end := i + chunkSize
-		if end > nPorts {
-			end = nPorts
-		}
-		chunkLen := end - i
-		delPorts := make([]model.Model, chunkLen)
-		for j := 0; j < chunkLen; j++ {
-			delPorts[j] = &LogicalSwitchPort{Name: fmt.Sprintf("p-%d", i+j)}
-		}
-		delOps, _ := env.ovsdbClient.Where(delPorts...).Delete()
-		_, _ = env.Transact(ctx, delOps...)
+	delPortOp := ovsdb.Operation{
+		Op:    "delete",
+		Table: "Logical_Switch_Port",
+		Where: []ovsdb.Condition{ovsdb.NewCondition("name", ovsdb.ConditionNotEqual, "")},
 	}
-	for i := 0; i < nAcls; i += chunkSize {
-		end := i + chunkSize
-		if end > nAcls {
-			end = nAcls
-		}
-		chunkLen := end - i
-		delAcls := make([]model.Model, chunkLen)
-		for j := 0; j < chunkLen; j++ {
-			idx := i + j
-			delAcls[j] = &ACL{
-				Action:    "allow-related",
-				Direction: "to-lport",
-				Priority:  1000 + (idx % 500),
-				Match:     fmt.Sprintf("ip4.src == 10.0.%d.%d && tcp.dst == 80", (idx>>8)&255, idx&255),
-			}
-		}
-		delOps, _ := env.ovsdbClient.Where(delAcls...).Delete()
-		_, _ = env.Transact(ctx, delOps...)
+	delAclOp := ovsdb.Operation{
+		Op:    "delete",
+		Table: "ACL",
+		Where: []ovsdb.Condition{ovsdb.NewCondition("priority", ovsdb.ConditionGreaterThanOrEqual, 0)},
 	}
-	for i := 0; i < nLbs; i += chunkSize {
-		end := i + chunkSize
-		if end > nLbs {
-			end = nLbs
-		}
-		chunkLen := end - i
-		delLbs := make([]model.Model, chunkLen)
-		for j := 0; j < chunkLen; j++ {
-			delLbs[j] = &LoadBalancer{Name: fmt.Sprintf("lb-%d", i+j)}
-		}
-		delOps, _ := env.ovsdbClient.Where(delLbs...).Delete()
-		_, _ = env.Transact(ctx, delOps...)
+	delLbOp := ovsdb.Operation{
+		Op:    "delete",
+		Table: "Load_Balancer",
+		Where: []ovsdb.Condition{ovsdb.NewCondition("name", ovsdb.ConditionNotEqual, "")},
 	}
-	delSw, _ := env.ovsdbClient.Where(swModels...).Delete()
-	delR, _ := env.ovsdbClient.Where(router).Delete()
-	_, _ = env.Transact(ctx, append(delSw, delR...)...)
+	delSwOp := ovsdb.Operation{
+		Op:    "delete",
+		Table: "Logical_Switch",
+		Where: []ovsdb.Condition{ovsdb.NewCondition("name", ovsdb.ConditionNotEqual, "")},
+	}
+	delROp := ovsdb.Operation{
+		Op:    "delete",
+		Table: "Logical_Router",
+		Where: []ovsdb.Condition{ovsdb.NewCondition("name", ovsdb.ConditionNotEqual, "")},
+	}
+	_, _ = env.Transact(ctx, delSwOp, delROp, delPortOp, delAclOp, delLbOp)
 
 	env.Sync()
 	delSec := float64(time.Since(t1).Microseconds()) / 1e6
@@ -1359,6 +1325,49 @@ func calcPct(vGlibc, vJemalloc float64) string {
 	return fmt.Sprintf("%+.1f%%", diff)
 }
 
+func generateMermaidChart(title, yLabel string, categories []string, gVals, jVals []float64, chartType string) string {
+	maxV := 0.0
+	for _, v := range append(gVals, jVals...) {
+		if v > maxV {
+			maxV = v
+		}
+	}
+	if maxV <= 0 {
+		maxV = 10
+	}
+	maxAxis := int(math.Ceil(maxV * 1.15))
+
+	catStrs := make([]string, len(categories))
+	for i, c := range categories {
+		catStrs[i] = fmt.Sprintf("%q", c)
+	}
+	gStrs := make([]string, len(gVals))
+	for i, v := range gVals {
+		gStrs[i] = fmt.Sprintf("%.1f", v)
+	}
+	jStrs := make([]string, len(jVals))
+	for i, v := range jVals {
+		jStrs[i] = fmt.Sprintf("%.1f", v)
+	}
+
+	var b strings.Builder
+	b.WriteString("```mermaid\n")
+	b.WriteString("---\n")
+	b.WriteString("config:\n")
+	b.WriteString("    themeVariables:\n")
+	b.WriteString("        xyChart:\n")
+	b.WriteString("            plotColorPalette: \"#1f77b4, #ff7f0e\"\n")
+	b.WriteString("---\n")
+	b.WriteString("xychart-beta\n")
+	b.WriteString(fmt.Sprintf("    title %q\n", title))
+	b.WriteString(fmt.Sprintf("    x-axis [%s]\n", strings.Join(catStrs, ", ")))
+	b.WriteString(fmt.Sprintf("    y-axis %q 0 --> %d\n", yLabel, maxAxis))
+	b.WriteString(fmt.Sprintf("    %s \"glibc malloc\" [%s]\n", chartType, strings.Join(gStrs, ", ")))
+	b.WriteString(fmt.Sprintf("    %s \"jemalloc\" [%s]\n", chartType, strings.Join(jStrs, ", ")))
+	b.WriteString("```\n\n")
+	return b.String()
+}
+
 func generateReport(results map[string]map[string]map[string]BenchResult, sysInfo map[string]string) string {
 	var lines []string
 	lines = append(lines, "# Isolated Object Scaling Benchmark: glibc malloc vs jemalloc", "")
@@ -1373,7 +1382,7 @@ func generateReport(results map[string]map[string]map[string]BenchResult, sysInf
 	lines = append(lines, "Each benchmark evaluates an isolated OVN/OVS object type across powers of 10 (`1, 10, 100, 1,000, 10,000, 100,000`) through 3 lifecycle phases using **native libovsdb** for database transactions:")
 	lines = append(lines, "1. **Baseline (Idle)**: Clean process RSS before creating objects.")
 	lines = append(lines, "2. **After Add (N)**: Time taken to commit $N$ objects via native OVSDB JSON-RPC, full recompute latency (`ovn-northd-loop` stopwatch), and peak RSS (`VmHWM`).")
-	lines = append(lines, "3. **After Remove (N)**: Time taken to delete all $N$ objects via native OVSDB JSON-RPC, post-deletion recompute latency, and retained heap memory (`Post-Deletion RSS - Baseline RSS`) measured after a 5-second wait allowing background page decay (`dirty_decay_ms:1000,muzzy_decay_ms:1000`).", "")
+	lines = append(lines, "3. **After Remove (N)**: Time taken to delete all $N$ objects via native OVSDB JSON-RPC, post-deletion recompute latency, and retained heap memory (`Post-Deletion RSS - Baseline RSS`) measured after a wait period allowing page decay (`dirty_decay_ms:0,muzzy_decay_ms:0`).", "")
 	lines = append(lines, "---", "")
 
 	objTitles := map[string]string{
@@ -1428,8 +1437,10 @@ func generateReport(results map[string]map[string]map[string]BenchResult, sysInf
 				delLabel = "Flow Flush Duration (`dpctl/del-flows`)"
 			}
 
-			lines = append(lines, fmt.Sprintf("| **%d** | %s | %.3f s | %.3f s | %s |",
-				nVal, addLabel, g.AddSec, j.AddSec, calcPct(g.AddSec, j.AddSec)))
+			lines = append(lines, fmt.Sprintf("| **%d** | Baseline RSS | %.2f MiB | %.2f MiB | %s |",
+				nVal, g.BaselineRSS, j.BaselineRSS, calcPct(g.BaselineRSS, j.BaselineRSS)))
+			lines = append(lines, fmt.Sprintf("| | %s | %.3f s | %.3f s | %s |",
+				addLabel, g.AddSec, j.AddSec, calcPct(g.AddSec, j.AddSec)))
 			lines = append(lines, fmt.Sprintf("| | %s | %s %s | %s %s | %s |",
 				rateLabel, formatNum(g.AddRate), addUnit, formatNum(j.AddRate), addUnit, calcPct(g.AddRate, j.AddRate)))
 
@@ -1465,6 +1476,50 @@ func generateReport(results map[string]map[string]map[string]BenchResult, sysInf
 			lines = append(lines, "|---|---|---|---|---|")
 		}
 		lines = append(lines, "")
+
+		if len(scalesList) >= 2 {
+			cats := make([]string, len(scalesList))
+			gPeak := make([]float64, len(scalesList))
+			jPeak := make([]float64, len(scalesList))
+			gLoop := make([]float64, len(scalesList))
+			jLoop := make([]float64, len(scalesList))
+			gRate := make([]float64, len(scalesList))
+			jRate := make([]float64, len(scalesList))
+
+			for i, nVal := range scalesList {
+				scaleStr := strconv.Itoa(nVal)
+				allocData := scalesData[scaleStr]
+				g := allocData["glibc"]
+				j := allocData["jemalloc"]
+
+				if nVal >= 1000 {
+					cats[i] = fmt.Sprintf("%dk", nVal/1000)
+				} else {
+					cats[i] = strconv.Itoa(nVal)
+				}
+				gPeak[i] = g.PeakRSS
+				jPeak[i] = j.PeakRSS
+				gLoop[i] = g.AddLoopMs
+				jLoop[i] = j.AddLoopMs
+				gRate[i] = g.AddRate
+				jRate[i] = j.AddRate
+			}
+
+			lines = append(lines, "### Visual Charts", "")
+			if obj != "flow" && obj != "datapath" {
+				chartTitle := fmt.Sprintf("%s - Recompute Latency", title)
+				lines = append(lines, generateMermaidChart(chartTitle, "northd-loop (ms)", cats, gLoop, jLoop, "line"))
+			} else if obj == "datapath" {
+				chartTitle := fmt.Sprintf("%s - Forwarding Rate", title)
+				lines = append(lines, generateMermaidChart(chartTitle, "pkts/s", cats, gRate, jRate, "line"))
+			} else if obj == "flow" {
+				chartTitle := fmt.Sprintf("%s - Insertion Rate", title)
+				lines = append(lines, generateMermaidChart(chartTitle, "ops/s", cats, gRate, jRate, "line"))
+			}
+
+			chartPeakTitle := fmt.Sprintf("%s - Peak Memory", title)
+			lines = append(lines, generateMermaidChart(chartPeakTitle, "Peak RSS (MiB)", cats, gPeak, jPeak, "line"))
+		}
 	}
 
 	return strings.Join(lines, "\n")
@@ -1498,6 +1553,7 @@ type Config struct {
 	ovnDir       string
 	useSystem    bool
 	jemallocConf string
+	reportOnly   bool
 }
 
 func parseConfig() *Config {
@@ -1510,6 +1566,7 @@ func parseConfig() *Config {
 	ovnDirFlag := flag.String("ovn-dir", "", "Directory containing OVN binaries (or build/ovn-*)")
 	useSystemFlag := flag.Bool("use-system", false, "Force using system/container-installed packages and LD_PRELOAD")
 	jemallocConfFlag := flag.String("jemalloc-conf", defaultJemallocConf, "MALLOC_CONF string for jemalloc")
+	reportOnlyFlag := flag.Bool("report-only", false, "Regenerate markdown report from results/benchmark_data.json and exit")
 	flag.Parse()
 
 	cfg := &Config{
@@ -1518,6 +1575,7 @@ func parseConfig() *Config {
 		ovnDir:       *ovnDirFlag,
 		useSystem:    *useSystemFlag,
 		jemallocConf: *jemallocConfFlag,
+		reportOnly:   *reportOnlyFlag,
 	}
 
 	for _, s := range strings.Split(*scalesFlag, ",") {
@@ -1734,6 +1792,11 @@ func main() {
 	fmt.Printf("Scales: %v | Threads: %v\n\n", cfg.scales, cfg.threads)
 
 	results := loadStoredResults()
+
+	if cfg.reportOnly {
+		saveBenchmarkResults(results, sysInfo)
+		return
+	}
 
 	for _, obj := range cfg.objects {
 		fmt.Printf("=== Benchmarking Object: %s ===\n", strings.ToUpper(obj))

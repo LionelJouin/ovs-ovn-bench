@@ -21,7 +21,7 @@ For every object type and scale $N$, measurements follow a 3-phase lifecycle:
 3. **Phase 3: After Remove ($N$)**:
    - **Deletion Duration**: Time to delete all $N$ objects and synchronize.
    - **Post-Deletion Recompute**: Execution time of cleanup engine iteration.
-   - **Retained Heap ($\Delta$ RSS)**: `Post-Deletion VmRSS - Baseline VmRSS` measured after 5 seconds to allow background thread decay (`dirty_decay_ms:1000,muzzy_decay_ms:1000`).
+   - **Retained Heap ($\Delta$ RSS)**: `Post-Deletion VmRSS - Baseline VmRSS` measured after page decay (`dirty_decay_ms:0,muzzy_decay_ms:0`).
 
 ---
 
@@ -82,7 +82,7 @@ env:
   - name: LD_PRELOAD
     value: "/usr/lib64/libjemalloc.so.2"
   - name: MALLOC_CONF
-    value: "background_thread:true,dirty_decay_ms:1000,muzzy_decay_ms:1000,narenas:4"
+    value: "background_thread:true,dirty_decay_ms:0,muzzy_decay_ms:0,narenas:4"
 ```
 
 To run end-to-end tests via `kube-burner`:
