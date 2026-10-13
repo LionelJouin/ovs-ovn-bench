@@ -1370,7 +1370,7 @@ func generateMermaidChart(title, yLabel string, categories []string, gVals, jVal
 
 func generateReport(results map[string]map[string]map[string]BenchResult, sysInfo map[string]string) string {
 	var lines []string
-	lines = append(lines, "# Isolated Object Scaling Benchmark: glibc malloc vs jemalloc", "")
+	lines = append(lines, "# OVS & OVN Scaling Benchmark: glibc malloc vs jemalloc", "")
 	lines = append(lines, fmt.Sprintf("**Date:** %s", time.Now().Format("2006-01-02 15:04:05")))
 	lines = append(lines, fmt.Sprintf("**System:** %s", sysInfo["os"]))
 	lines = append(lines, fmt.Sprintf("**CPU:** %s (%s vCPUs)", sysInfo["cpu_model"], sysInfo["cpu_cores"]))
@@ -1379,7 +1379,7 @@ func generateReport(results map[string]map[string]map[string]BenchResult, sysInf
 	lines = append(lines, fmt.Sprintf("**Jemalloc Version:** %s", sysInfo["jemalloc_version"]), "")
 	lines = append(lines, "---", "")
 	lines = append(lines, "## Methodology", "")
-	lines = append(lines, "Each benchmark evaluates an isolated OVN/OVS object type across powers of 10 (`1, 10, 100, 1,000, 10,000, 100,000`) through 3 lifecycle phases using **native libovsdb** for database transactions:")
+	lines = append(lines, "Each benchmark evaluates individual OVN/OVS objects, dataplane forwarding, or combined workloads across powers of 10 (`1, 10, 100, 1,000, 10,000, 100,000`) through 3 lifecycle phases using **native libovsdb** for database transactions:")
 	lines = append(lines, "1. **Baseline (Idle)**: Clean process RSS before creating objects.")
 	lines = append(lines, "2. **After Add (N)**: Time taken to commit $N$ objects via native OVSDB JSON-RPC, full recompute latency (`ovn-northd-loop` stopwatch), and peak RSS (`VmHWM`).")
 	lines = append(lines, "3. **After Remove (N)**: Time taken to delete all $N$ objects via native OVSDB JSON-RPC, post-deletion recompute latency, and retained heap memory (`Post-Deletion RSS - Baseline RSS`) measured after a wait period allowing page decay (`dirty_decay_ms:0,muzzy_decay_ms:0`).", "")

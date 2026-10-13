@@ -17,7 +17,7 @@ mkdir -p "$SCRIPT_DIR/results"
 echo "==> Building benchmark container (Ubuntu 24.04 with OVS, OVN, and jemalloc)..."
 $RUNTIME build -t ovs-ovn-bench "$SCRIPT_DIR"
 
-echo "==> Running isolated object scale benchmark inside container..."
+echo "==> Running OVS/OVN scaling benchmark inside container..."
 $RUNTIME run --rm -v "$SCRIPT_DIR/results:/workspace/results:Z" ovs-ovn-bench "$@"
 
 echo "==> Benchmark complete! Results saved to $SCRIPT_DIR/results/BENCHMARK_REPORT.md"

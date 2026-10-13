@@ -1,6 +1,6 @@
-# Isolated Object Scaling Benchmark: glibc malloc vs jemalloc
+# OVS & OVN Scaling Benchmark: glibc malloc vs jemalloc
 
-**Date:** 2026-10-13 19:23:08
+**Date:** 2026-10-13 19:28:12
 **System:** Linux
 **CPU:** Intel(R) Core(TM) Ultra 7 165H (22 vCPUs)
 **Memory:** 62Gi
@@ -11,7 +11,7 @@
 
 ## Methodology
 
-Each benchmark evaluates an isolated OVN/OVS object type across powers of 10 (`1, 10, 100, 1,000, 10,000, 100,000`) through 3 lifecycle phases using **native libovsdb** for database transactions:
+Each benchmark evaluates individual OVN/OVS objects, dataplane forwarding, or combined workloads across powers of 10 (`1, 10, 100, 1,000, 10,000, 100,000`) through 3 lifecycle phases using **native libovsdb** for database transactions:
 1. **Baseline (Idle)**: Clean process RSS before creating objects.
 2. **After Add (N)**: Time taken to commit $N$ objects via native OVSDB JSON-RPC, full recompute latency (`ovn-northd-loop` stopwatch), and peak RSS (`VmHWM`).
 3. **After Remove (N)**: Time taken to delete all $N$ objects via native OVSDB JSON-RPC, post-deletion recompute latency, and retained heap memory (`Post-Deletion RSS - Baseline RSS`) measured after a wait period allowing page decay (`dirty_decay_ms:0,muzzy_decay_ms:0`).

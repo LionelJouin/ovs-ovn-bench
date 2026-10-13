@@ -6,12 +6,12 @@ Benchmarking framework comparing **GNU C Library allocator (`glibc malloc / ptma
 
 ## Methodology
 
-The benchmark evaluates isolated OVS and OVN object types across orders of magnitude:
+The benchmark evaluates individual OVN/OVS object types, datapath forwarding, and combined workloads across orders of magnitude:
 $$\text{Scales: } 1,\; 10,\; 100,\; 1{,}000,\; 10{,}000,\; 100{,}000$$
 
 All OVN Northbound database transactions are executed via `libovsdb` JSON-RPC over Unix domain sockets.
 
-For every object type and scale $N$, measurements follow a 3-phase lifecycle:
+For every workload and scale $N$, measurements follow a 3-phase lifecycle:
 
 1. **Phase 1: Baseline (Idle)**: Daemon Resident Set Size (`VmRSS` in MiB) before creating objects.
 2. **Phase 2: After Add ($N$)**:
@@ -25,7 +25,7 @@ For every object type and scale $N$, measurements follow a 3-phase lifecycle:
 
 ---
 
-## Evaluated Object Types
+## Evaluated Workloads & Object Types
 
 | Object Type | Description |
 |---|---|
