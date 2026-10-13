@@ -1,6 +1,6 @@
 # OVS & OVN Scaling Benchmark: glibc malloc vs jemalloc
 
-**Date:** 2026-10-13 19:52:46
+**Date:** 2026-10-13 21:42:27
 **System:** Linux
 **CPU:** Intel(R) Core(TM) Ultra 7 165H (22 vCPUs)
 **Memory:** 62Gi
@@ -11,9 +11,9 @@
 
 ## Methodology
 
-Each benchmark evaluates individual OVN/OVS objects, dataplane forwarding, or combined workloads across powers of 10 (`1, 10, 100, 1,000, 10,000, 100,000`) through 3 lifecycle phases using **native libovsdb** for database transactions:
-1. **Baseline (Idle)**: Clean process RSS before creating objects.
-2. **After Add (N)**: Time taken to commit $N$ objects via native OVSDB JSON-RPC, full recompute latency (`ovn-northd-loop` stopwatch), and peak RSS (`VmHWM`).
+Each benchmark evaluates individual OVN/OVS objects, OpenFlow rule scaling, or combined workloads across powers of 10 (`1, 10, 100, 1,000, 10,000, 100,000`) through 3 lifecycle phases measuring the full OVN-Kubernetes pod stack (`ovn-northd`, `ovn-controller`, `ovs-vswitchd`, and `ovsdb-servers`):
+1. **Baseline (Idle)**: Total Pod and per-daemon clean process RSS before creating objects.
+2. **After Add (N)**: Time taken to commit $N$ objects via native OVSDB JSON-RPC, full recompute latency (`ovn-northd-loop` stopwatch), and Total Pod peak RSS (`VmHWM`) with per-daemon breakdown.
 3. **After Remove (N)**: Time taken to delete all $N$ objects via native OVSDB JSON-RPC, post-deletion recompute latency, and retained heap memory (`Post-Deletion RSS - Baseline RSS`) measured after a wait period allowing page decay (`dirty_decay_ms:0,muzzy_decay_ms:0`).
 
 ---
@@ -22,60 +22,66 @@ Each benchmark evaluates individual OVN/OVS objects, dataplane forwarding, or co
 
 | Scale (N) | Phase / Metric | glibc malloc | jemalloc | Relative Difference |
 |---|---|---|---|---|
-| **1** | Baseline RSS | 10.66 MiB | 12.37 MiB | +16.0% |
-| | Add Duration | 0.003 s | 0.004 s | +33.3% |
-| | Add Rate | 305 ops/s | 245 ops/s | -19.7% |
+| **1** | Total Pod Baseline RSS | 10.56 MiB | 12.34 MiB | +16.9% |
+| | Add Duration | 0.004 s | 0.003 s | -25.0% |
+| | Add Rate | 273 ops/s | 328 ops/s | +20.3% |
 | | Recompute (`ovn-northd-loop`) | 1.0 ms | 1.0 ms | ~Parity (±1%) |
-| | Logical Flow (`lflow`) | 1.0 ms | 1.0 ms | ~Parity (±1%) |
-| | Peak RSS (`VmHWM`) | 10.67 MiB | 12.40 MiB | +16.2% |
-| | Delete Duration | 0.003 s | 0.003 s | ~Parity (±1%) |
-| | Post-Delete Recompute | 4.8 ms | 4.4 ms | -9.6% |
-| | Post-Delete RSS | 10.67 MiB | 12.41 MiB | +16.3% |
-| | **Retained Heap vs Baseline** | **+0.01 MiB** | **+0.04 MiB** | **+0.03 MiB** |
+| | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
+| | Total Pod Peak RSS (`VmHWM`) | 10.56 MiB | 12.43 MiB | +17.7% |
+| | Delete Duration | 0.004 s | 0.003 s | -25.0% |
+| | Post-Delete Recompute | 1.0 ms | 5.3 ms | +432.7% |
+| | Total Pod Post-Delete RSS | 10.54 MiB | 12.44 MiB | +18.0% |
+| | **Total Pod Retained Heap** | **-0.02 MiB** | **+0.10 MiB** | **+0.12 MiB** |
 |---|---|---|---|---|
-| **10** | Baseline RSS | 10.73 MiB | 12.31 MiB | +14.7% |
-| | Add Duration | 0.005 s | 0.004 s | -20.0% |
-| | Add Rate | 2,209 ops/s | 2,421 ops/s | +9.6% |
+| **10** | Total Pod Baseline RSS | 75.72 MiB | 80.45 MiB | +6.2% |
+| | Add Duration | 0.006 s | 0.008 s | +33.3% |
+| | Add Rate | 1,560 ops/s | 1,177 ops/s | -24.5% |
 | | Recompute (`ovn-northd-loop`) | 1.0 ms | 1.0 ms | ~Parity (±1%) |
-| | Logical Flow (`lflow`) | 0.0 ms | 1.0 ms | N/A |
-| | Peak RSS (`VmHWM`) | 10.95 MiB | 12.68 MiB | +15.8% |
-| | Delete Duration | 0.003 s | 0.003 s | ~Parity (±1%) |
-| | Post-Delete Recompute | 4.4 ms | 1.0 ms | -77.5% |
-| | Post-Delete RSS | 10.95 MiB | 12.62 MiB | +15.3% |
-| | **Retained Heap vs Baseline** | **+0.22 MiB** | **+0.31 MiB** | **+0.09 MiB** |
-|---|---|---|---|---|
-| **100** | Baseline RSS | 10.56 MiB | 12.35 MiB | +17.0% |
-| | Add Duration | 0.020 s | 0.021 s | +5.0% |
-| | Add Rate | 4,895 ops/s | 4,662 ops/s | -4.8% |
-| | Recompute (`ovn-northd-loop`) | 2.0 ms | 2.0 ms | ~Parity (±1%) |
-| | Logical Flow (`lflow`) | 1.0 ms | 1.0 ms | ~Parity (±1%) |
-| | Peak RSS (`VmHWM`) | 13.46 MiB | 14.65 MiB | +8.8% |
-| | Delete Duration | 0.007 s | 0.006 s | -14.3% |
+| | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
+| | Total Pod Peak RSS (`VmHWM`) | 75.90 MiB | 80.87 MiB | +6.5% |
+| | Delete Duration | 0.008 s | 0.007 s | -12.5% |
 | | Post-Delete Recompute | 1.0 ms | 1.0 ms | ~Parity (±1%) |
-| | Post-Delete RSS | 13.46 MiB | 13.29 MiB | -1.3% |
-| | **Retained Heap vs Baseline** | **+2.90 MiB** | **+0.94 MiB** | **-1.96 MiB** |
+| | Total Pod Post-Delete RSS | 78.52 MiB | 83.58 MiB | +6.4% |
+| | **Total Pod Retained Heap** | **+2.80 MiB** | **+3.13 MiB** | **+0.33 MiB** |
+| | ├─ `ovn-northd` (Peak / Retained) | 14.69 / +0.58 MiB | 15.77 / +0.72 MiB | +7.4% / +0.14 MiB |
+| | ├─ `ovn-controller` (Peak / Retained) | 12.06 / +0.33 MiB | 12.82 / +0.36 MiB | +6.3% / +0.03 MiB |
+| | ├─ `ovs-vswitchd` (Peak / Retained) | 19.12 / +0.03 MiB | 21.41 / +0.02 MiB | +12.0% / -0.01 MiB |
+| | ├─ `ovsdb-server (SB)` (Peak / Retained) | 10.43 / +0.62 MiB | 10.73 / +0.74 MiB | +2.9% / +0.12 MiB |
+| | ├─ `ovsdb-server (NB)` (Peak / Retained) | 9.88 / +0.62 MiB | 10.10 / +0.67 MiB | +2.2% / +0.05 MiB |
+| | ├─ `ovsdb-server (OVS)` (Peak / Retained) | 9.72 / +0.62 MiB | 10.04 / +0.62 MiB | +3.3% / +0.00 MiB |
 |---|---|---|---|---|
-| **1000** | Baseline RSS | 10.52 MiB | 12.18 MiB | +15.8% |
-| | Add Duration | 0.199 s | 0.181 s | -9.0% |
-| | Add Rate | 5,034 ops/s | 5,515 ops/s | +9.6% |
-| | Recompute (`ovn-northd-loop`) | 14.0 ms | 9.0 ms | -35.7% |
-| | Logical Flow (`lflow`) | 7.0 ms | 4.0 ms | -42.9% |
-| | Peak RSS (`VmHWM`) | 36.56 MiB | 31.96 MiB | -12.6% |
-| | Delete Duration | 0.100 s | 0.056 s | -44.0% |
-| | Post-Delete Recompute | 1.0 ms | 1.0 ms | ~Parity (±1%) |
-| | Post-Delete RSS | 36.61 MiB | 14.71 MiB | -59.8% |
-| | **Retained Heap vs Baseline** | **+26.09 MiB** | **+2.53 MiB** | **-23.56 MiB** |
+| **100** | Total Pod Baseline RSS | 10.51 MiB | 12.44 MiB | +18.4% |
+| | Add Duration | 0.020 s | 0.018 s | -10.0% |
+| | Add Rate | 5,048 ops/s | 5,542 ops/s | +9.8% |
+| | Recompute (`ovn-northd-loop`) | 1.0 ms | 1.0 ms | ~Parity (±1%) |
+| | Logical Flow (`lflow`) | 1.0 ms | 0.0 ms | -100.0% |
+| | Total Pod Peak RSS (`VmHWM`) | 13.39 MiB | 14.73 MiB | +10.0% |
+| | Delete Duration | 0.007 s | 0.009 s | +28.6% |
+| | Post-Delete Recompute | 1.0 ms | 4.5 ms | +350.6% |
+| | Total Pod Post-Delete RSS | 11.13 MiB | 13.38 MiB | +20.2% |
+| | **Total Pod Retained Heap** | **+0.62 MiB** | **+0.94 MiB** | **+0.32 MiB** |
 |---|---|---|---|---|
-| **10000** | Baseline RSS | 10.57 MiB | 12.41 MiB | +17.4% |
-| | Add Duration | 3.329 s | 2.325 s | -30.2% |
-| | Add Rate | 3,003 ops/s | 4,300 ops/s | +43.2% |
-| | Recompute (`ovn-northd-loop`) | 240.0 ms | 130.0 ms | -45.8% |
-| | Logical Flow (`lflow`) | 123.0 ms | 75.0 ms | -39.0% |
-| | Peak RSS (`VmHWM`) | 274.67 MiB | 227.43 MiB | -17.2% |
-| | Delete Duration | 2.069 s | 0.774 s | -62.6% |
-| | Post-Delete Recompute | 88.0 ms | 35.0 ms | -60.2% |
-| | Post-Delete RSS | 275.01 MiB | 19.21 MiB | -93.0% |
-| | **Retained Heap vs Baseline** | **+264.44 MiB** | **+6.80 MiB** | **-257.64 MiB** |
+| **1000** | Total Pod Baseline RSS | 10.66 MiB | 12.21 MiB | +14.5% |
+| | Add Duration | 0.232 s | 0.175 s | -24.6% |
+| | Add Rate | 4,303 ops/s | 5,708 ops/s | +32.6% |
+| | Recompute (`ovn-northd-loop`) | 13.0 ms | 12.0 ms | -7.7% |
+| | Logical Flow (`lflow`) | 7.0 ms | 5.0 ms | -28.6% |
+| | Total Pod Peak RSS (`VmHWM`) | 36.91 MiB | 32.00 MiB | -13.3% |
+| | Delete Duration | 0.105 s | 0.059 s | -43.8% |
+| | Post-Delete Recompute | 6.1 ms | 6.1 ms | ~Parity (±1%) |
+| | Total Pod Post-Delete RSS | 12.97 MiB | 14.82 MiB | +14.3% |
+| | **Total Pod Retained Heap** | **+2.31 MiB** | **+2.61 MiB** | **+0.30 MiB** |
+|---|---|---|---|---|
+| **10000** | Total Pod Baseline RSS | 10.72 MiB | 12.36 MiB | +15.3% |
+| | Add Duration | 3.386 s | 2.357 s | -30.4% |
+| | Add Rate | 2,953 ops/s | 4,243 ops/s | +43.7% |
+| | Recompute (`ovn-northd-loop`) | 227.0 ms | 124.0 ms | -45.4% |
+| | Logical Flow (`lflow`) | 116.0 ms | 75.0 ms | -35.3% |
+| | Total Pod Peak RSS (`VmHWM`) | 264.92 MiB | 224.70 MiB | -15.2% |
+| | Delete Duration | 2.105 s | 0.752 s | -64.3% |
+| | Post-Delete Recompute | 104.0 ms | 34.0 ms | -67.3% |
+| | Total Pod Post-Delete RSS | 27.41 MiB | 19.28 MiB | -29.7% |
+| | **Total Pod Retained Heap** | **+16.69 MiB** | **+6.92 MiB** | **-9.77 MiB** |
 |---|---|---|---|---|
 
 ### Visual Charts
@@ -90,9 +96,9 @@ config:
 xychart-beta
     title "Logical Switch Port (LSP with IP, MAC, port_security) - Recompute Latency"
     x-axis ["1", "10", "100", "1k", "10k"]
-    y-axis "northd-loop (ms)" 0 --> 276
-    line "glibc malloc" [1.0, 1.0, 2.0, 14.0, 240.0]
-    line "jemalloc" [1.0, 1.0, 2.0, 9.0, 130.0]
+    y-axis "northd-loop (ms)" 0 --> 262
+    line "glibc malloc" [1.0, 1.0, 1.0, 13.0, 227.0]
+    line "jemalloc" [1.0, 1.0, 1.0, 12.0, 124.0]
 ```
 
 
@@ -106,9 +112,9 @@ config:
 xychart-beta
     title "Logical Switch Port (LSP with IP, MAC, port_security) - Peak Memory"
     x-axis ["1", "10", "100", "1k", "10k"]
-    y-axis "Peak RSS (MiB)" 0 --> 316
-    line "glibc malloc" [10.7, 10.9, 13.5, 36.6, 274.7]
-    line "jemalloc" [12.4, 12.7, 14.7, 32.0, 227.4]
+    y-axis "Peak RSS (MiB)" 0 --> 305
+    line "glibc malloc" [10.6, 75.9, 13.4, 36.9, 264.9]
+    line "jemalloc" [12.4, 80.9, 14.7, 32.0, 224.7]
 ```
 
 
@@ -116,60 +122,60 @@ xychart-beta
 
 | Scale (N) | Phase / Metric | glibc malloc | jemalloc | Relative Difference |
 |---|---|---|---|---|
-| **1** | Baseline RSS | 10.61 MiB | 12.43 MiB | +17.2% |
+| **1** | Total Pod Baseline RSS | 10.52 MiB | 12.35 MiB | +17.4% |
 | | Add Duration | 0.004 s | 0.004 s | ~Parity (±1%) |
-| | Add Rate | 256 ops/s | 257 ops/s | ~Parity (±1%) |
-| | Recompute (`ovn-northd-loop`) | 5.7 ms | 1.0 ms | -82.5% |
+| | Add Rate | 243 ops/s | 256 ops/s | +5.4% |
+| | Recompute (`ovn-northd-loop`) | 6.1 ms | 5.5 ms | -9.2% |
 | | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
-| | Peak RSS (`VmHWM`) | 10.70 MiB | 12.52 MiB | +17.0% |
-| | Delete Duration | 0.003 s | 0.004 s | +33.3% |
-| | Post-Delete Recompute | 4.4 ms | 1.0 ms | -77.2% |
-| | Post-Delete RSS | 10.70 MiB | 12.52 MiB | +17.0% |
-| | **Retained Heap vs Baseline** | **+0.09 MiB** | **+0.09 MiB** | **+0.00 MiB** |
+| | Total Pod Peak RSS (`VmHWM`) | 10.60 MiB | 12.45 MiB | +17.5% |
+| | Delete Duration | 0.004 s | 0.004 s | ~Parity (±1%) |
+| | Post-Delete Recompute | 1.0 ms | 5.6 ms | +462.2% |
+| | Total Pod Post-Delete RSS | 10.58 MiB | 12.44 MiB | +17.6% |
+| | **Total Pod Retained Heap** | **+0.06 MiB** | **+0.09 MiB** | **+0.03 MiB** |
 |---|---|---|---|---|
-| **10** | Baseline RSS | 10.56 MiB | 12.25 MiB | +16.0% |
+| **10** | Total Pod Baseline RSS | 10.58 MiB | 12.34 MiB | +16.6% |
 | | Add Duration | 0.005 s | 0.004 s | -20.0% |
-| | Add Rate | 2,110 ops/s | 2,392 ops/s | +13.4% |
-| | Recompute (`ovn-northd-loop`) | 5.4 ms | 1.0 ms | -81.4% |
-| | Logical Flow (`lflow`) | 0.0 ms | 1.0 ms | N/A |
-| | Peak RSS (`VmHWM`) | 10.75 MiB | 12.43 MiB | +15.6% |
-| | Delete Duration | 0.003 s | 0.003 s | ~Parity (±1%) |
-| | Post-Delete Recompute | 4.6 ms | 1.0 ms | -78.4% |
-| | Post-Delete RSS | 10.75 MiB | 12.43 MiB | +15.6% |
-| | **Retained Heap vs Baseline** | **+0.19 MiB** | **+0.18 MiB** | **-0.01 MiB** |
+| | Add Rate | 1,992 ops/s | 2,776 ops/s | +39.4% |
+| | Recompute (`ovn-northd-loop`) | 4.5 ms | 1.0 ms | -77.6% |
+| | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
+| | Total Pod Peak RSS (`VmHWM`) | 10.77 MiB | 12.51 MiB | +16.2% |
+| | Delete Duration | 0.003 s | 0.004 s | +33.3% |
+| | Post-Delete Recompute | 5.3 ms | 1.0 ms | -81.1% |
+| | Total Pod Post-Delete RSS | 10.69 MiB | 12.51 MiB | +17.0% |
+| | **Total Pod Retained Heap** | **+0.11 MiB** | **+0.17 MiB** | **+0.06 MiB** |
 |---|---|---|---|---|
-| **100** | Baseline RSS | 10.66 MiB | 12.34 MiB | +15.8% |
+| **100** | Total Pod Baseline RSS | 10.56 MiB | 12.32 MiB | +16.7% |
 | | Add Duration | 0.010 s | 0.009 s | -10.0% |
-| | Add Rate | 10,393 ops/s | 10,687 ops/s | +2.8% |
+| | Add Rate | 10,171 ops/s | 10,799 ops/s | +6.2% |
 | | Recompute (`ovn-northd-loop`) | 1.0 ms | 1.0 ms | ~Parity (±1%) |
-| | Logical Flow (`lflow`) | 1.0 ms | 0.0 ms | -100.0% |
-| | Peak RSS (`VmHWM`) | 11.89 MiB | 13.27 MiB | +11.6% |
-| | Delete Duration | 0.006 s | 0.004 s | -33.3% |
-| | Post-Delete Recompute | 1.0 ms | 5.2 ms | +416.3% |
-| | Post-Delete RSS | 11.89 MiB | 12.89 MiB | +8.4% |
-| | **Retained Heap vs Baseline** | **+1.23 MiB** | **+0.55 MiB** | **-0.68 MiB** |
+| | Logical Flow (`lflow`) | 1.0 ms | 1.0 ms | ~Parity (±1%) |
+| | Total Pod Peak RSS (`VmHWM`) | 11.83 MiB | 13.24 MiB | +11.9% |
+| | Delete Duration | 0.006 s | 0.005 s | -16.7% |
+| | Post-Delete Recompute | 1.0 ms | 6.0 ms | +496.7% |
+| | Total Pod Post-Delete RSS | 11.05 MiB | 12.86 MiB | +16.4% |
+| | **Total Pod Retained Heap** | **+0.49 MiB** | **+0.54 MiB** | **+0.05 MiB** |
 |---|---|---|---|---|
-| **1000** | Baseline RSS | 10.73 MiB | 12.31 MiB | +14.7% |
-| | Add Duration | 0.070 s | 0.066 s | -5.7% |
-| | Add Rate | 14,388 ops/s | 15,149 ops/s | +5.3% |
-| | Recompute (`ovn-northd-loop`) | 3.0 ms | 3.0 ms | ~Parity (±1%) |
-| | Logical Flow (`lflow`) | 3.0 ms | 2.0 ms | -33.3% |
-| | Peak RSS (`VmHWM`) | 20.78 MiB | 20.00 MiB | -3.8% |
-| | Delete Duration | 0.035 s | 0.023 s | -34.3% |
-| | Post-Delete Recompute | 5.8 ms | 5.6 ms | -4.9% |
-| | Post-Delete RSS | 20.78 MiB | 13.43 MiB | -35.4% |
-| | **Retained Heap vs Baseline** | **+10.05 MiB** | **+1.12 MiB** | **-8.93 MiB** |
+| **1000** | Total Pod Baseline RSS | 10.46 MiB | 12.44 MiB | +18.9% |
+| | Add Duration | 0.083 s | 0.066 s | -20.5% |
+| | Add Rate | 12,088 ops/s | 15,050 ops/s | +24.5% |
+| | Recompute (`ovn-northd-loop`) | 5.0 ms | 3.0 ms | -40.0% |
+| | Logical Flow (`lflow`) | 5.0 ms | 3.0 ms | -40.0% |
+| | Total Pod Peak RSS (`VmHWM`) | 20.57 MiB | 19.94 MiB | -3.1% |
+| | Delete Duration | 0.037 s | 0.026 s | -29.7% |
+| | Post-Delete Recompute | 5.6 ms | 1.0 ms | -82.1% |
+| | Total Pod Post-Delete RSS | 11.89 MiB | 13.54 MiB | +13.9% |
+| | **Total Pod Retained Heap** | **+1.43 MiB** | **+1.10 MiB** | **-0.33 MiB** |
 |---|---|---|---|---|
-| **10000** | Baseline RSS | 14.46 MiB | 15.48 MiB | +7.1% |
-| | Add Duration | 0.846 s | 0.681 s | -19.5% |
-| | Add Rate | 11,815 ops/s | 14,686 ops/s | +24.3% |
-| | Recompute (`ovn-northd-loop`) | 97.0 ms | 70.0 ms | -27.8% |
-| | Logical Flow (`lflow`) | 73.0 ms | 50.0 ms | -31.5% |
-| | Peak RSS (`VmHWM`) | 108.59 MiB | 87.06 MiB | -19.8% |
-| | Delete Duration | 0.501 s | 0.292 s | -41.7% |
-| | Post-Delete Recompute | 1.0 ms | 1.0 ms | ~Parity (±1%) |
-| | Post-Delete RSS | 107.57 MiB | 18.42 MiB | -82.9% |
-| | **Retained Heap vs Baseline** | **+93.11 MiB** | **+2.94 MiB** | **-90.17 MiB** |
+| **10000** | Total Pod Baseline RSS | 10.52 MiB | 12.36 MiB | +17.5% |
+| | Add Duration | 1.114 s | 0.839 s | -24.7% |
+| | Add Rate | 8,973 ops/s | 11,919 ops/s | +32.8% |
+| | Recompute (`ovn-northd-loop`) | 34.0 ms | 50.0 ms | +47.1% |
+| | Logical Flow (`lflow`) | 29.0 ms | 45.0 ms | +55.2% |
+| | Total Pod Peak RSS (`VmHWM`) | 105.56 MiB | 90.34 MiB | -14.4% |
+| | Delete Duration | 0.787 s | 0.335 s | -57.4% |
+| | Post-Delete Recompute | 10.0 ms | 5.8 ms | -42.0% |
+| | Total Pod Post-Delete RSS | 11.82 MiB | 14.88 MiB | +25.9% |
+| | **Total Pod Retained Heap** | **+1.30 MiB** | **+2.52 MiB** | **+1.22 MiB** |
 |---|---|---|---|---|
 
 ### Visual Charts
@@ -184,9 +190,9 @@ config:
 xychart-beta
     title "ACL (Access Control List with stateful allow-related) - Recompute Latency"
     x-axis ["1", "10", "100", "1k", "10k"]
-    y-axis "northd-loop (ms)" 0 --> 112
-    line "glibc malloc" [5.7, 5.4, 1.0, 3.0, 97.0]
-    line "jemalloc" [1.0, 1.0, 1.0, 3.0, 70.0]
+    y-axis "northd-loop (ms)" 0 --> 58
+    line "glibc malloc" [6.1, 4.5, 1.0, 5.0, 34.0]
+    line "jemalloc" [5.5, 1.0, 1.0, 3.0, 50.0]
 ```
 
 
@@ -200,9 +206,9 @@ config:
 xychart-beta
     title "ACL (Access Control List with stateful allow-related) - Peak Memory"
     x-axis ["1", "10", "100", "1k", "10k"]
-    y-axis "Peak RSS (MiB)" 0 --> 125
-    line "glibc malloc" [10.7, 10.8, 11.9, 20.8, 108.6]
-    line "jemalloc" [12.5, 12.4, 13.3, 20.0, 87.1]
+    y-axis "Peak RSS (MiB)" 0 --> 122
+    line "glibc malloc" [10.6, 10.8, 11.8, 20.6, 105.6]
+    line "jemalloc" [12.4, 12.5, 13.2, 19.9, 90.3]
 ```
 
 
@@ -210,60 +216,60 @@ xychart-beta
 
 | Scale (N) | Phase / Metric | glibc malloc | jemalloc | Relative Difference |
 |---|---|---|---|---|
-| **1** | Baseline RSS | 10.57 MiB | 12.34 MiB | +16.7% |
-| | Add Duration | 0.004 s | 0.003 s | -25.0% |
-| | Add Rate | 250 ops/s | 303 ops/s | +21.1% |
-| | Recompute (`ovn-northd-loop`) | 1.0 ms | 5.1 ms | +405.8% |
-| | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
-| | Peak RSS (`VmHWM`) | 10.65 MiB | 12.49 MiB | +17.3% |
-| | Delete Duration | 0.004 s | 0.003 s | -25.0% |
-| | Post-Delete Recompute | 5.3 ms | 4.7 ms | -12.3% |
-| | Post-Delete RSS | 10.65 MiB | 12.45 MiB | +16.9% |
-| | **Retained Heap vs Baseline** | **+0.08 MiB** | **+0.11 MiB** | **+0.03 MiB** |
-|---|---|---|---|---|
-| **10** | Baseline RSS | 10.62 MiB | 12.35 MiB | +16.3% |
-| | Add Duration | 0.004 s | 0.004 s | ~Parity (±1%) |
-| | Add Rate | 2,322 ops/s | 2,794 ops/s | +20.3% |
+| **1** | Total Pod Baseline RSS | 10.73 MiB | 12.30 MiB | +14.6% |
+| | Add Duration | 0.006 s | 0.003 s | -50.0% |
+| | Add Rate | 169 ops/s | 307 ops/s | +81.6% |
 | | Recompute (`ovn-northd-loop`) | 1.0 ms | 1.0 ms | ~Parity (±1%) |
 | | Logical Flow (`lflow`) | 0.0 ms | 1.0 ms | N/A |
-| | Peak RSS (`VmHWM`) | 10.71 MiB | 12.44 MiB | +16.2% |
-| | Delete Duration | 0.004 s | 0.004 s | ~Parity (±1%) |
-| | Post-Delete Recompute | 1.0 ms | 5.0 ms | +399.6% |
-| | Post-Delete RSS | 10.71 MiB | 12.44 MiB | +16.2% |
-| | **Retained Heap vs Baseline** | **+0.09 MiB** | **+0.09 MiB** | **+0.00 MiB** |
-|---|---|---|---|---|
-| **100** | Baseline RSS | 10.58 MiB | 12.35 MiB | +16.7% |
-| | Add Duration | 0.004 s | 0.004 s | ~Parity (±1%) |
-| | Add Rate | 26,867 ops/s | 25,773 ops/s | -4.1% |
-| | Recompute (`ovn-northd-loop`) | 5.1 ms | 1.0 ms | -80.5% |
-| | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
-| | Peak RSS (`VmHWM`) | 10.70 MiB | 12.46 MiB | +16.4% |
+| | Total Pod Peak RSS (`VmHWM`) | 10.81 MiB | 12.39 MiB | +14.6% |
 | | Delete Duration | 0.004 s | 0.003 s | -25.0% |
-| | Post-Delete Recompute | 4.9 ms | 5.1 ms | +2.9% |
-| | Post-Delete RSS | 10.70 MiB | 12.45 MiB | +16.4% |
-| | **Retained Heap vs Baseline** | **+0.12 MiB** | **+0.10 MiB** | **-0.02 MiB** |
+| | Post-Delete Recompute | 1.0 ms | 3.8 ms | +276.3% |
+| | Total Pod Post-Delete RSS | 10.79 MiB | 12.39 MiB | +14.8% |
+| | **Total Pod Retained Heap** | **+0.06 MiB** | **+0.09 MiB** | **+0.03 MiB** |
 |---|---|---|---|---|
-| **1000** | Baseline RSS | 10.66 MiB | 12.36 MiB | +15.9% |
-| | Add Duration | 0.007 s | 0.006 s | -14.3% |
-| | Add Rate | 151,011 ops/s | 174,886 ops/s | +15.8% |
+| **10** | Total Pod Baseline RSS | 10.47 MiB | 12.30 MiB | +17.5% |
+| | Add Duration | 0.004 s | 0.003 s | -25.0% |
+| | Add Rate | 2,402 ops/s | 2,967 ops/s | +23.5% |
 | | Recompute (`ovn-northd-loop`) | 1.0 ms | 1.0 ms | ~Parity (±1%) |
 | | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
-| | Peak RSS (`VmHWM`) | 10.97 MiB | 12.64 MiB | +15.2% |
+| | Total Pod Peak RSS (`VmHWM`) | 10.56 MiB | 12.44 MiB | +17.8% |
 | | Delete Duration | 0.004 s | 0.004 s | ~Parity (±1%) |
-| | Post-Delete Recompute | 1.0 ms | 1.0 ms | ~Parity (±1%) |
-| | Post-Delete RSS | 10.97 MiB | 12.59 MiB | +14.8% |
-| | **Retained Heap vs Baseline** | **+0.31 MiB** | **+0.23 MiB** | **-0.08 MiB** |
+| | Post-Delete Recompute | 4.2 ms | 4.9 ms | +15.7% |
+| | Total Pod Post-Delete RSS | 10.54 MiB | 12.40 MiB | +17.6% |
+| | **Total Pod Retained Heap** | **+0.07 MiB** | **+0.10 MiB** | **+0.03 MiB** |
 |---|---|---|---|---|
-| **10000** | Baseline RSS | 10.58 MiB | 12.24 MiB | +15.7% |
-| | Add Duration | 0.026 s | 0.022 s | -15.4% |
-| | Add Rate | 380,430 ops/s | 449,236 ops/s | +18.1% |
+| **100** | Total Pod Baseline RSS | 10.56 MiB | 12.38 MiB | +17.2% |
+| | Add Duration | 0.004 s | 0.004 s | ~Parity (±1%) |
+| | Add Rate | 22,716 ops/s | 25,680 ops/s | +13.0% |
+| | Recompute (`ovn-northd-loop`) | 5.6 ms | 5.6 ms | +1.6% |
+| | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
+| | Total Pod Peak RSS (`VmHWM`) | 10.67 MiB | 12.54 MiB | +17.5% |
+| | Delete Duration | 0.003 s | 0.003 s | ~Parity (±1%) |
+| | Post-Delete Recompute | 1.0 ms | 5.2 ms | +423.1% |
+| | Total Pod Post-Delete RSS | 10.64 MiB | 12.49 MiB | +17.4% |
+| | **Total Pod Retained Heap** | **+0.08 MiB** | **+0.11 MiB** | **+0.03 MiB** |
+|---|---|---|---|---|
+| **1000** | Total Pod Baseline RSS | 10.58 MiB | 12.27 MiB | +16.0% |
+| | Add Duration | 0.007 s | 0.005 s | -28.6% |
+| | Add Rate | 148,853 ops/s | 196,889 ops/s | +32.3% |
+| | Recompute (`ovn-northd-loop`) | 1.0 ms | 5.7 ms | +470.5% |
+| | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
+| | Total Pod Peak RSS (`VmHWM`) | 10.89 MiB | 12.52 MiB | +15.0% |
+| | Delete Duration | 0.004 s | 0.003 s | -25.0% |
+| | Post-Delete Recompute | 5.7 ms | 1.0 ms | -82.4% |
+| | Total Pod Post-Delete RSS | 10.71 MiB | 12.49 MiB | +16.6% |
+| | **Total Pod Retained Heap** | **+0.13 MiB** | **+0.22 MiB** | **+0.09 MiB** |
+|---|---|---|---|---|
+| **10000** | Total Pod Baseline RSS | 10.57 MiB | 12.36 MiB | +16.9% |
+| | Add Duration | 0.021 s | 0.018 s | -14.3% |
+| | Add Rate | 478,125 ops/s | 554,323 ops/s | +15.9% |
 | | Recompute (`ovn-northd-loop`) | 1.0 ms | 1.0 ms | ~Parity (±1%) |
 | | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
-| | Peak RSS (`VmHWM`) | 12.71 MiB | 14.05 MiB | +10.5% |
-| | Delete Duration | 0.005 s | 0.004 s | -20.0% |
-| | Post-Delete Recompute | 1.0 ms | 5.5 ms | +448.4% |
-| | Post-Delete RSS | 12.55 MiB | 12.43 MiB | ~Parity (±1%) |
-| | **Retained Heap vs Baseline** | **+1.97 MiB** | **+0.19 MiB** | **-1.78 MiB** |
+| | Total Pod Peak RSS (`VmHWM`) | 12.71 MiB | 14.16 MiB | +11.4% |
+| | Delete Duration | 0.003 s | 0.004 s | +33.3% |
+| | Post-Delete Recompute | 5.8 ms | 1.0 ms | -82.7% |
+| | Total Pod Post-Delete RSS | 10.76 MiB | 12.52 MiB | +16.4% |
+| | **Total Pod Retained Heap** | **+0.19 MiB** | **+0.16 MiB** | **-0.03 MiB** |
 |---|---|---|---|---|
 
 ### Visual Charts
@@ -278,9 +284,9 @@ config:
 xychart-beta
     title "Address Set (IP list matching ACL) - Recompute Latency"
     x-axis ["1", "10", "100", "1k", "10k"]
-    y-axis "northd-loop (ms)" 0 --> 6
-    line "glibc malloc" [1.0, 1.0, 5.1, 1.0, 1.0]
-    line "jemalloc" [5.1, 1.0, 1.0, 1.0, 1.0]
+    y-axis "northd-loop (ms)" 0 --> 7
+    line "glibc malloc" [1.0, 1.0, 5.6, 1.0, 1.0]
+    line "jemalloc" [1.0, 1.0, 5.6, 5.7, 1.0]
 ```
 
 
@@ -295,8 +301,8 @@ xychart-beta
     title "Address Set (IP list matching ACL) - Peak Memory"
     x-axis ["1", "10", "100", "1k", "10k"]
     y-axis "Peak RSS (MiB)" 0 --> 17
-    line "glibc malloc" [10.7, 10.7, 10.7, 11.0, 12.7]
-    line "jemalloc" [12.5, 12.4, 12.5, 12.6, 14.1]
+    line "glibc malloc" [10.8, 10.6, 10.7, 10.9, 12.7]
+    line "jemalloc" [12.4, 12.4, 12.5, 12.5, 14.2]
 ```
 
 
@@ -304,60 +310,60 @@ xychart-beta
 
 | Scale (N) | Phase / Metric | glibc malloc | jemalloc | Relative Difference |
 |---|---|---|---|---|
-| **1** | Baseline RSS | 10.63 MiB | 12.39 MiB | +16.6% |
-| | Add Duration | 0.005 s | 0.004 s | -20.0% |
-| | Add Rate | 220 ops/s | 246 ops/s | +12.2% |
-| | Recompute (`ovn-northd-loop`) | 1.0 ms | 1.0 ms | ~Parity (±1%) |
-| | Logical Flow (`lflow`) | 1.0 ms | 0.0 ms | -100.0% |
-| | Peak RSS (`VmHWM`) | 10.72 MiB | 12.49 MiB | +16.5% |
-| | Delete Duration | 0.003 s | 0.004 s | +33.3% |
-| | Post-Delete Recompute | 4.7 ms | 5.4 ms | +14.5% |
-| | Post-Delete RSS | 10.72 MiB | 12.47 MiB | +16.3% |
-| | **Retained Heap vs Baseline** | **+0.09 MiB** | **+0.08 MiB** | **-0.01 MiB** |
-|---|---|---|---|---|
-| **10** | Baseline RSS | 10.72 MiB | 12.35 MiB | +15.2% |
+| **1** | Total Pod Baseline RSS | 10.53 MiB | 12.37 MiB | +17.5% |
 | | Add Duration | 0.004 s | 0.004 s | ~Parity (±1%) |
-| | Add Rate | 2,378 ops/s | 2,566 ops/s | +7.9% |
-| | Recompute (`ovn-northd-loop`) | 1.0 ms | 4.3 ms | +329.8% |
+| | Add Rate | 240 ops/s | 270 ops/s | +12.4% |
+| | Recompute (`ovn-northd-loop`) | 4.9 ms | 1.0 ms | -79.4% |
 | | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
-| | Peak RSS (`VmHWM`) | 10.80 MiB | 12.44 MiB | +15.2% |
-| | Delete Duration | 0.004 s | 0.004 s | ~Parity (±1%) |
-| | Post-Delete Recompute | 1.0 ms | 1.0 ms | ~Parity (±1%) |
-| | Post-Delete RSS | 10.80 MiB | 12.45 MiB | +15.3% |
-| | **Retained Heap vs Baseline** | **+0.08 MiB** | **+0.10 MiB** | **+0.02 MiB** |
+| | Total Pod Peak RSS (`VmHWM`) | 10.62 MiB | 12.49 MiB | +17.6% |
+| | Delete Duration | 0.003 s | 0.003 s | ~Parity (±1%) |
+| | Post-Delete Recompute | 1.0 ms | 5.1 ms | +411.6% |
+| | Total Pod Post-Delete RSS | 10.59 MiB | 12.46 MiB | +17.7% |
+| | **Total Pod Retained Heap** | **+0.06 MiB** | **+0.09 MiB** | **+0.03 MiB** |
 |---|---|---|---|---|
-| **100** | Baseline RSS | 10.98 MiB | 12.77 MiB | +16.3% |
-| | Add Duration | 0.004 s | 0.003 s | -25.0% |
-| | Add Rate | 24,777 ops/s | 34,199 ops/s | +38.0% |
-| | Recompute (`ovn-northd-loop`) | 1.0 ms | 5.7 ms | +470.1% |
+| **10** | Total Pod Baseline RSS | 14.47 MiB | 15.51 MiB | +7.2% |
+| | Add Duration | 0.009 s | 0.011 s | +22.2% |
+| | Add Rate | 1,140 ops/s | 922 ops/s | -19.1% |
+| | Recompute (`ovn-northd-loop`) | 1.0 ms | 1.0 ms | ~Parity (±1%) |
 | | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
-| | Peak RSS (`VmHWM`) | 11.07 MiB | 12.89 MiB | +16.4% |
-| | Delete Duration | 0.005 s | 0.004 s | -20.0% |
-| | Post-Delete Recompute | 5.0 ms | 1.0 ms | -79.9% |
-| | Post-Delete RSS | 11.11 MiB | 12.77 MiB | +14.9% |
-| | **Retained Heap vs Baseline** | **+0.13 MiB** | **+0.00 MiB** | **-0.13 MiB** |
-|---|---|---|---|---|
-| **1000** | Baseline RSS | 15.26 MiB | 16.04 MiB | +5.1% |
-| | Add Duration | 0.010 s | 0.009 s | -10.0% |
-| | Add Rate | 97,713 ops/s | 107,330 ops/s | +9.8% |
-| | Recompute (`ovn-northd-loop`) | 5.0 ms | 2.0 ms | -60.0% |
-| | Logical Flow (`lflow`) | 1.0 ms | 0.0 ms | -100.0% |
-| | Peak RSS (`VmHWM`) | 15.30 MiB | 16.21 MiB | +5.9% |
-| | Delete Duration | 0.018 s | 0.017 s | -5.6% |
+| | Total Pod Peak RSS (`VmHWM`) | 14.61 MiB | 15.64 MiB | +7.0% |
+| | Delete Duration | 0.008 s | 0.007 s | -12.5% |
 | | Post-Delete Recompute | 1.0 ms | 1.0 ms | ~Parity (±1%) |
-| | Post-Delete RSS | 15.55 MiB | 14.22 MiB | -8.6% |
-| | **Retained Heap vs Baseline** | **+0.29 MiB** | **-1.82 MiB** | **-2.11 MiB** |
+| | Total Pod Post-Delete RSS | 15.02 MiB | 16.11 MiB | +7.3% |
+| | **Total Pod Retained Heap** | **+0.55 MiB** | **+0.61 MiB** | **+0.06 MiB** |
 |---|---|---|---|---|
-| **10000** | Baseline RSS | 54.29 MiB | 49.30 MiB | -9.2% |
-| | Add Duration | 0.092 s | 0.072 s | -21.7% |
-| | Add Rate | 108,254 ops/s | 139,062 ops/s | +28.5% |
-| | Recompute (`ovn-northd-loop`) | 60.0 ms | 37.0 ms | -38.3% |
-| | Logical Flow (`lflow`) | 8.0 ms | 6.0 ms | -25.0% |
-| | Peak RSS (`VmHWM`) | 54.64 MiB | 51.21 MiB | -6.3% |
-| | Delete Duration | 0.302 s | 0.214 s | -29.1% |
-| | Post-Delete Recompute | 36.0 ms | 25.0 ms | -30.6% |
-| | Post-Delete RSS | 60.36 MiB | 15.44 MiB | -74.4% |
-| | **Retained Heap vs Baseline** | **+6.07 MiB** | **-33.86 MiB** | **-39.93 MiB** |
+| **100** | Total Pod Baseline RSS | 10.89 MiB | 12.79 MiB | +17.4% |
+| | Add Duration | 0.005 s | 0.004 s | -20.0% |
+| | Add Rate | 18,501 ops/s | 22,446 ops/s | +21.3% |
+| | Recompute (`ovn-northd-loop`) | 1.0 ms | 5.0 ms | +400.2% |
+| | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
+| | Total Pod Peak RSS (`VmHWM`) | 10.93 MiB | 12.92 MiB | +18.2% |
+| | Delete Duration | 0.006 s | 0.004 s | -33.3% |
+| | Post-Delete Recompute | 1.0 ms | 4.6 ms | +364.2% |
+| | Total Pod Post-Delete RSS | 10.68 MiB | 12.78 MiB | +19.7% |
+| | **Total Pod Retained Heap** | **-0.21 MiB** | **-0.01 MiB** | **+0.20 MiB** |
+|---|---|---|---|---|
+| **1000** | Total Pod Baseline RSS | 15.06 MiB | 16.17 MiB | +7.4% |
+| | Add Duration | 0.012 s | 0.009 s | -25.0% |
+| | Add Rate | 80,729 ops/s | 111,794 ops/s | +38.5% |
+| | Recompute (`ovn-northd-loop`) | 3.0 ms | 4.0 ms | +33.3% |
+| | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
+| | Total Pod Peak RSS (`VmHWM`) | 15.10 MiB | 16.37 MiB | +8.4% |
+| | Delete Duration | 0.020 s | 0.017 s | -15.0% |
+| | Post-Delete Recompute | 1.0 ms | 1.0 ms | ~Parity (±1%) |
+| | Total Pod Post-Delete RSS | 11.50 MiB | 14.12 MiB | +22.8% |
+| | **Total Pod Retained Heap** | **-3.56 MiB** | **-2.05 MiB** | **+1.51 MiB** |
+|---|---|---|---|---|
+| **10000** | Total Pod Baseline RSS | 57.32 MiB | 49.05 MiB | -14.4% |
+| | Add Duration | 0.099 s | 0.070 s | -29.3% |
+| | Add Rate | 100,731 ops/s | 142,013 ops/s | +41.0% |
+| | Recompute (`ovn-northd-loop`) | 49.0 ms | 40.0 ms | -18.4% |
+| | Logical Flow (`lflow`) | 7.0 ms | 6.0 ms | -14.3% |
+| | Total Pod Peak RSS (`VmHWM`) | 58.76 MiB | 50.93 MiB | -13.3% |
+| | Delete Duration | 0.288 s | 0.211 s | -26.7% |
+| | Post-Delete Recompute | 36.0 ms | 24.0 ms | -33.3% |
+| | Total Pod Post-Delete RSS | 12.14 MiB | 15.11 MiB | +24.5% |
+| | **Total Pod Retained Heap** | **-45.18 MiB** | **-33.94 MiB** | **+11.24 MiB** |
 |---|---|---|---|---|
 
 ### Visual Charts
@@ -372,9 +378,9 @@ config:
 xychart-beta
     title "Port Group (Ports member grouping matching ACL) - Recompute Latency"
     x-axis ["1", "10", "100", "1k", "10k"]
-    y-axis "northd-loop (ms)" 0 --> 69
-    line "glibc malloc" [1.0, 1.0, 1.0, 5.0, 60.0]
-    line "jemalloc" [1.0, 4.3, 5.7, 2.0, 37.0]
+    y-axis "northd-loop (ms)" 0 --> 57
+    line "glibc malloc" [4.9, 1.0, 1.0, 3.0, 49.0]
+    line "jemalloc" [1.0, 1.0, 5.0, 4.0, 40.0]
 ```
 
 
@@ -388,9 +394,9 @@ config:
 xychart-beta
     title "Port Group (Ports member grouping matching ACL) - Peak Memory"
     x-axis ["1", "10", "100", "1k", "10k"]
-    y-axis "Peak RSS (MiB)" 0 --> 63
-    line "glibc malloc" [10.7, 10.8, 11.1, 15.3, 54.6]
-    line "jemalloc" [12.5, 12.4, 12.9, 16.2, 51.2]
+    y-axis "Peak RSS (MiB)" 0 --> 68
+    line "glibc malloc" [10.6, 14.6, 10.9, 15.1, 58.8]
+    line "jemalloc" [12.5, 15.6, 12.9, 16.4, 50.9]
 ```
 
 
@@ -398,71 +404,71 @@ xychart-beta
 
 | Scale (N) | Phase / Metric | glibc malloc | jemalloc | Relative Difference |
 |---|---|---|---|---|
-| **1** | Baseline RSS | 10.55 MiB | 12.31 MiB | +16.7% |
+| **1** | Total Pod Baseline RSS | 10.56 MiB | 12.21 MiB | +15.6% |
 | | Add Duration | 0.004 s | 0.004 s | ~Parity (±1%) |
-| | Add Rate | 266 ops/s | 250 ops/s | -6.0% |
-| | Recompute (`ovn-northd-loop`) | 3.9 ms | 1.0 ms | -74.5% |
-| | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
-| | Peak RSS (`VmHWM`) | 10.68 MiB | 12.44 MiB | +16.5% |
-| | Delete Duration | 0.004 s | 0.003 s | -25.0% |
-| | Post-Delete Recompute | 1.0 ms | 1.0 ms | ~Parity (±1%) |
-| | Post-Delete RSS | 10.68 MiB | 12.46 MiB | +16.7% |
-| | **Retained Heap vs Baseline** | **+0.13 MiB** | **+0.15 MiB** | **+0.02 MiB** |
-|---|---|---|---|---|
-| **10** | Baseline RSS | 10.72 MiB | 12.33 MiB | +15.0% |
-| | Add Duration | 0.003 s | 0.004 s | +33.3% |
-| | Add Rate | 3,021 ops/s | 2,399 ops/s | -20.6% |
-| | Recompute (`ovn-northd-loop`) | 1.0 ms | 5.9 ms | +486.4% |
-| | Logical Flow (`lflow`) | 1.0 ms | 0.0 ms | -100.0% |
-| | Peak RSS (`VmHWM`) | 11.02 MiB | 12.64 MiB | +14.7% |
-| | Delete Duration | 0.004 s | 0.004 s | ~Parity (±1%) |
-| | Post-Delete Recompute | 1.0 ms | 5.5 ms | +454.0% |
-| | Post-Delete RSS | 11.02 MiB | 12.62 MiB | +14.5% |
-| | **Retained Heap vs Baseline** | **+0.30 MiB** | **+0.29 MiB** | **-0.01 MiB** |
-|---|---|---|---|---|
-| **100** | Baseline RSS | 10.55 MiB | 12.38 MiB | +17.3% |
-| | Add Duration | 0.016 s | 0.013 s | -18.8% |
-| | Add Rate | 6,354 ops/s | 7,619 ops/s | +19.9% |
+| | Add Rate | 259 ops/s | 261 ops/s | ~Parity (±1%) |
 | | Recompute (`ovn-northd-loop`) | 1.0 ms | 1.0 ms | ~Parity (±1%) |
-| | Logical Flow (`lflow`) | 1.0 ms | 0.0 ms | -100.0% |
-| | Peak RSS (`VmHWM`) | 12.51 MiB | 13.91 MiB | +11.2% |
-| | Delete Duration | 0.008 s | 0.006 s | -25.0% |
-| | Post-Delete Recompute | 1.0 ms | 1.0 ms | ~Parity (±1%) |
-| | Post-Delete RSS | 12.51 MiB | 13.24 MiB | +5.8% |
-| | **Retained Heap vs Baseline** | **+1.96 MiB** | **+0.86 MiB** | **-1.10 MiB** |
+| | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
+| | Total Pod Peak RSS (`VmHWM`) | 10.69 MiB | 12.34 MiB | +15.4% |
+| | Delete Duration | 0.003 s | 0.003 s | ~Parity (±1%) |
+| | Post-Delete Recompute | 4.8 ms | 1.0 ms | -79.2% |
+| | Total Pod Post-Delete RSS | 10.65 MiB | 12.35 MiB | +16.0% |
+| | **Total Pod Retained Heap** | **+0.09 MiB** | **+0.14 MiB** | **+0.05 MiB** |
 |---|---|---|---|---|
-| **1000** | Baseline RSS | 10.58 MiB | 12.38 MiB | +17.0% |
-| | Add Duration | 0.114 s | 0.093 s | -18.4% |
-| | Add Rate | 8,751 ops/s | 10,803 ops/s | +23.4% |
-| | Recompute (`ovn-northd-loop`) | 9.0 ms | 6.0 ms | -33.3% |
-| | Logical Flow (`lflow`) | 3.0 ms | 2.0 ms | -33.3% |
-| | Peak RSS (`VmHWM`) | 27.37 MiB | 24.62 MiB | -10.0% |
-| | Delete Duration | 0.056 s | 0.028 s | -50.0% |
-| | Post-Delete Recompute | 5.0 ms | 5.3 ms | +6.7% |
-| | Post-Delete RSS | 27.38 MiB | 14.35 MiB | -47.6% |
-| | **Retained Heap vs Baseline** | **+16.80 MiB** | **+1.97 MiB** | **-14.83 MiB** |
+| **10** | Total Pod Baseline RSS | 10.55 MiB | 12.36 MiB | +17.2% |
+| | Add Duration | 0.004 s | 0.004 s | ~Parity (±1%) |
+| | Add Rate | 2,498 ops/s | 2,333 ops/s | -6.6% |
+| | Recompute (`ovn-northd-loop`) | 1.0 ms | 1.0 ms | ~Parity (±1%) |
+| | Logical Flow (`lflow`) | 0.0 ms | 1.0 ms | N/A |
+| | Total Pod Peak RSS (`VmHWM`) | 10.80 MiB | 12.70 MiB | +17.6% |
+| | Delete Duration | 0.004 s | 0.003 s | -25.0% |
+| | Post-Delete Recompute | 1.0 ms | 5.9 ms | +492.0% |
+| | Total Pod Post-Delete RSS | 10.73 MiB | 12.71 MiB | +18.5% |
+| | **Total Pod Retained Heap** | **+0.18 MiB** | **+0.35 MiB** | **+0.17 MiB** |
 |---|---|---|---|---|
-| **5000** | Baseline RSS | 14.57 MiB | 15.48 MiB | +6.2% |
+| **100** | Total Pod Baseline RSS | 10.73 MiB | 12.22 MiB | +13.9% |
+| | Add Duration | 0.013 s | 0.014 s | +7.7% |
+| | Add Rate | 7,830 ops/s | 7,361 ops/s | -6.0% |
+| | Recompute (`ovn-northd-loop`) | 1.0 ms | 2.0 ms | +100.0% |
+| | Logical Flow (`lflow`) | 0.0 ms | 1.0 ms | N/A |
+| | Total Pod Peak RSS (`VmHWM`) | 12.75 MiB | 13.73 MiB | +7.7% |
+| | Delete Duration | 0.007 s | 0.004 s | -42.9% |
+| | Post-Delete Recompute | 1.0 ms | 5.7 ms | +472.6% |
+| | Total Pod Post-Delete RSS | 11.37 MiB | 13.15 MiB | +15.7% |
+| | **Total Pod Retained Heap** | **+0.64 MiB** | **+0.93 MiB** | **+0.29 MiB** |
+|---|---|---|---|---|
+| **1000** | Total Pod Baseline RSS | 10.73 MiB | 12.37 MiB | +15.3% |
+| | Add Duration | 0.114 s | 0.105 s | -7.9% |
+| | Add Rate | 8,758 ops/s | 9,533 ops/s | +8.8% |
+| | Recompute (`ovn-northd-loop`) | 8.0 ms | 6.0 ms | -25.0% |
+| | Logical Flow (`lflow`) | 2.0 ms | 2.0 ms | ~Parity (±1%) |
+| | Total Pod Peak RSS (`VmHWM`) | 27.18 MiB | 24.64 MiB | -9.3% |
+| | Delete Duration | 0.060 s | 0.029 s | -51.7% |
+| | Post-Delete Recompute | 5.0 ms | 1.0 ms | -80.0% |
+| | Total Pod Post-Delete RSS | 12.68 MiB | 14.25 MiB | +12.4% |
+| | **Total Pod Retained Heap** | **+1.95 MiB** | **+1.88 MiB** | **-0.07 MiB** |
+|---|---|---|---|---|
+| **5000** | Total Pod Baseline RSS | 14.57 MiB | 15.48 MiB | +6.2% |
 | | Add Duration | 0.531 s | 0.443 s | -16.6% |
 | | Add Rate | 9,413 ops/s | 11,292 ops/s | +20.0% |
 | | Recompute (`ovn-northd-loop`) | 51.0 ms | 41.0 ms | -19.6% |
 | | Logical Flow (`lflow`) | 10.0 ms | 8.0 ms | -20.0% |
-| | Peak RSS (`VmHWM`) | 83.85 MiB | 72.38 MiB | -13.7% |
+| | Total Pod Peak RSS (`VmHWM`) | 83.85 MiB | 72.38 MiB | -13.7% |
 | | Delete Duration | 0.286 s | 0.171 s | -40.2% |
 | | Post-Delete Recompute | 14.0 ms | 8.0 ms | -42.9% |
-| | Post-Delete RSS | 82.49 MiB | 18.49 MiB | -77.6% |
-| | **Retained Heap vs Baseline** | **+67.92 MiB** | **+3.01 MiB** | **-64.91 MiB** |
+| | Total Pod Post-Delete RSS | 82.49 MiB | 18.49 MiB | -77.6% |
+| | **Total Pod Retained Heap** | **+67.92 MiB** | **+3.01 MiB** | **-64.91 MiB** |
 |---|---|---|---|---|
-| **10000** | Baseline RSS | 14.46 MiB | 15.57 MiB | +7.7% |
-| | Add Duration | 1.261 s | 0.935 s | -25.9% |
-| | Add Rate | 7,932 ops/s | 10,693 ops/s | +34.8% |
-| | Recompute (`ovn-northd-loop`) | 112.0 ms | 85.0 ms | -24.1% |
-| | Logical Flow (`lflow`) | 30.0 ms | 25.0 ms | -16.7% |
-| | Peak RSS (`VmHWM`) | 141.38 MiB | 127.71 MiB | -9.7% |
-| | Delete Duration | 0.655 s | 0.370 s | -43.5% |
-| | Post-Delete Recompute | 30.0 ms | 18.0 ms | -40.0% |
-| | Post-Delete RSS | 140.20 MiB | 19.96 MiB | -85.8% |
-| | **Retained Heap vs Baseline** | **+125.74 MiB** | **+4.39 MiB** | **-121.35 MiB** |
+| **10000** | Total Pod Baseline RSS | 10.73 MiB | 12.45 MiB | +16.0% |
+| | Add Duration | 1.767 s | 1.136 s | -35.7% |
+| | Add Rate | 5,658 ops/s | 8,799 ops/s | +55.5% |
+| | Recompute (`ovn-northd-loop`) | 150.0 ms | 89.0 ms | -40.7% |
+| | Logical Flow (`lflow`) | 44.0 ms | 27.0 ms | -38.6% |
+| | Total Pod Peak RSS (`VmHWM`) | 182.79 MiB | 129.73 MiB | -29.0% |
+| | Delete Duration | 1.097 s | 0.402 s | -63.4% |
+| | Post-Delete Recompute | 85.0 ms | 29.0 ms | -65.9% |
+| | Total Pod Post-Delete RSS | 20.80 MiB | 16.46 MiB | -20.9% |
+| | **Total Pod Retained Heap** | **+10.07 MiB** | **+4.01 MiB** | **-6.06 MiB** |
 |---|---|---|---|---|
 
 ### Visual Charts
@@ -477,9 +483,9 @@ config:
 xychart-beta
     title "Load Balancer (VIPs mapped to endpoints) - Recompute Latency"
     x-axis ["1", "10", "100", "1k", "5k", "10k"]
-    y-axis "northd-loop (ms)" 0 --> 129
-    line "glibc malloc" [3.9, 1.0, 1.0, 9.0, 51.0, 112.0]
-    line "jemalloc" [1.0, 5.9, 1.0, 6.0, 41.0, 85.0]
+    y-axis "northd-loop (ms)" 0 --> 173
+    line "glibc malloc" [1.0, 1.0, 1.0, 8.0, 51.0, 150.0]
+    line "jemalloc" [1.0, 1.0, 2.0, 6.0, 41.0, 89.0]
 ```
 
 
@@ -493,9 +499,9 @@ config:
 xychart-beta
     title "Load Balancer (VIPs mapped to endpoints) - Peak Memory"
     x-axis ["1", "10", "100", "1k", "5k", "10k"]
-    y-axis "Peak RSS (MiB)" 0 --> 163
-    line "glibc malloc" [10.7, 11.0, 12.5, 27.4, 83.8, 141.4]
-    line "jemalloc" [12.4, 12.6, 13.9, 24.6, 72.4, 127.7]
+    y-axis "Peak RSS (MiB)" 0 --> 211
+    line "glibc malloc" [10.7, 10.8, 12.8, 27.2, 83.8, 182.8]
+    line "jemalloc" [12.3, 12.7, 13.7, 24.6, 72.4, 129.7]
 ```
 
 
@@ -503,53 +509,65 @@ xychart-beta
 
 | Scale (N) | Phase / Metric | glibc malloc | jemalloc | Relative Difference |
 |---|---|---|---|---|
-| **1** | Baseline RSS | 21.25 MiB | 25.93 MiB | +22.0% |
-| | Add Duration | 0.003 s | 0.004 s | +33.3% |
-| | Add Rate | 368 ops/s | 285 ops/s | -22.5% |
-| | Peak RSS (`VmHWM`) | 21.48 MiB | 26.04 MiB | +21.2% |
-| | Delete Duration | 0.003 s | 0.004 s | +33.3% |
-| | Post-Delete RSS | 21.50 MiB | 26.02 MiB | +21.0% |
-| | **Retained Heap vs Baseline** | **+0.25 MiB** | **+0.09 MiB** | **-0.16 MiB** |
-|---|---|---|---|---|
-| **10** | Baseline RSS | 21.35 MiB | 25.83 MiB | +21.0% |
-| | Add Duration | 0.003 s | 0.006 s | +100.0% |
-| | Add Rate | 3,762 ops/s | 1,796 ops/s | -52.2% |
-| | Peak RSS (`VmHWM`) | 21.51 MiB | 26.03 MiB | +21.0% |
+| **1** | Total Pod Baseline RSS | 21.45 MiB | 25.82 MiB | +20.4% |
+| | Add Duration | 0.003 s | 0.005 s | +66.7% |
+| | Add Rate | 351 ops/s | 195 ops/s | -44.4% |
+| | Total Pod Peak RSS (`VmHWM`) | 21.59 MiB | 25.96 MiB | +20.2% |
 | | Delete Duration | 0.002 s | 0.004 s | +100.0% |
-| | Post-Delete RSS | 21.54 MiB | 26.08 MiB | +21.1% |
-| | **Retained Heap vs Baseline** | **+0.19 MiB** | **+0.25 MiB** | **+0.06 MiB** |
+| | Total Pod Post-Delete RSS | 21.61 MiB | 25.94 MiB | +20.0% |
+| | **Total Pod Retained Heap** | **+0.16 MiB** | **+0.12 MiB** | **-0.04 MiB** |
 |---|---|---|---|---|
-| **100** | Baseline RSS | 21.27 MiB | 25.86 MiB | +21.6% |
-| | Add Duration | 0.007 s | 0.009 s | +28.6% |
-| | Add Rate | 14,863 ops/s | 10,830 ops/s | -27.1% |
-| | Peak RSS (`VmHWM`) | 21.43 MiB | 26.06 MiB | +21.6% |
-| | Delete Duration | 0.003 s | 0.005 s | +66.7% |
-| | Post-Delete RSS | 21.59 MiB | 26.11 MiB | +20.9% |
-| | **Retained Heap vs Baseline** | **+0.32 MiB** | **+0.25 MiB** | **-0.07 MiB** |
+| **10** | Total Pod Baseline RSS | 74.71 MiB | 79.71 MiB | +6.7% |
+| | Add Duration | 0.005 s | 0.004 s | -20.0% |
+| | Add Rate | 2,203 ops/s | 2,532 ops/s | +14.9% |
+| | Total Pod Peak RSS (`VmHWM`) | 74.71 MiB | 79.71 MiB | +6.7% |
+| | Delete Duration | 0.005 s | 0.005 s | ~Parity (±1%) |
+| | Total Pod Post-Delete RSS | 77.37 MiB | 82.42 MiB | +6.5% |
+| | **Total Pod Retained Heap** | **+2.66 MiB** | **+2.71 MiB** | **+0.05 MiB** |
+| | ├─ `ovn-northd` (Peak / Retained) | 14.11 / +0.44 MiB | 15.20 / +0.46 MiB | +7.7% / +0.02 MiB |
+| | ├─ `ovn-controller` (Peak / Retained) | 12.00 / +0.32 MiB | 12.96 / +0.35 MiB | +8.0% / +0.03 MiB |
+| | ├─ `ovs-vswitchd` (Peak / Retained) | 19.23 / +0.03 MiB | 21.18 / +0.03 MiB | +10.1% / +0.00 MiB |
+| | ├─ `ovsdb-server (SB)` (Peak / Retained) | 9.80 / +0.62 MiB | 10.26 / +0.62 MiB | +4.7% / +0.00 MiB |
+| | ├─ `ovsdb-server (NB)` (Peak / Retained) | 9.78 / +0.63 MiB | 10.02 / +0.63 MiB | +2.5% / +0.00 MiB |
+| | ├─ `ovsdb-server (OVS)` (Peak / Retained) | 9.79 / +0.62 MiB | 10.09 / +0.62 MiB | +3.1% / +0.00 MiB |
 |---|---|---|---|---|
-| **1000** | Baseline RSS | 21.13 MiB | 25.82 MiB | +22.2% |
-| | Add Duration | 0.030 s | 0.036 s | +20.0% |
-| | Add Rate | 33,453 ops/s | 27,740 ops/s | -17.1% |
-| | Peak RSS (`VmHWM`) | 22.01 MiB | 26.68 MiB | +21.2% |
+| **100** | Total Pod Baseline RSS | 21.21 MiB | 25.92 MiB | +22.2% |
+| | Add Duration | 0.007 s | 0.007 s | ~Parity (±1%) |
+| | Add Rate | 14,718 ops/s | 13,821 ops/s | -6.1% |
+| | Total Pod Peak RSS (`VmHWM`) | 21.45 MiB | 26.20 MiB | +22.1% |
+| | Delete Duration | 0.003 s | 0.004 s | +33.3% |
+| | Total Pod Post-Delete RSS | 21.61 MiB | 26.31 MiB | +21.7% |
+| | **Total Pod Retained Heap** | **+0.40 MiB** | **+0.39 MiB** | **-0.01 MiB** |
+|---|---|---|---|---|
+| **1000** | Total Pod Baseline RSS | 21.42 MiB | 25.91 MiB | +21.0% |
+| | Add Duration | 0.035 s | 0.038 s | +8.6% |
+| | Add Rate | 28,388 ops/s | 26,208 ops/s | -7.7% |
+| | Total Pod Peak RSS (`VmHWM`) | 22.25 MiB | 26.68 MiB | +19.9% |
+| | Delete Duration | 0.002 s | 0.003 s | +50.0% |
+| | Total Pod Post-Delete RSS | 22.42 MiB | 26.82 MiB | +19.6% |
+| | **Total Pod Retained Heap** | **+1.00 MiB** | **+0.91 MiB** | **-0.09 MiB** |
+|---|---|---|---|---|
+| **10000** | Total Pod Baseline RSS | 21.26 MiB | 25.84 MiB | +21.5% |
+| | Add Duration | 0.281 s | 0.306 s | +8.9% |
+| | Add Rate | 35,532 ops/s | 32,713 ops/s | -7.9% |
+| | Total Pod Peak RSS (`VmHWM`) | 28.84 MiB | 33.29 MiB | +15.4% |
+| | Delete Duration | 0.005 s | 0.007 s | +40.0% |
+| | Total Pod Post-Delete RSS | 29.69 MiB | 26.83 MiB | -9.6% |
+| | **Total Pod Retained Heap** | **+8.43 MiB** | **+0.99 MiB** | **-7.44 MiB** |
+|---|---|---|---|---|
+| **100000** | Total Pod Baseline RSS | 74.81 MiB | 79.38 MiB | +6.1% |
+| | Add Duration | 0.006 s | 0.004 s | -33.3% |
+| | Add Rate | 16,583,747 ops/s | 26,838,432 ops/s | +61.8% |
+| | Total Pod Peak RSS (`VmHWM`) | 74.81 MiB | 79.38 MiB | +6.1% |
 | | Delete Duration | 0.003 s | 0.003 s | ~Parity (±1%) |
-| | Post-Delete RSS | 22.25 MiB | 26.89 MiB | +20.9% |
-| | **Retained Heap vs Baseline** | **+1.12 MiB** | **+1.07 MiB** | **-0.05 MiB** |
-|---|---|---|---|---|
-| **10000** | Baseline RSS | 21.23 MiB | 26.03 MiB | +22.6% |
-| | Add Duration | 0.273 s | 0.267 s | -2.2% |
-| | Add Rate | 36,676 ops/s | 37,393 ops/s | +2.0% |
-| | Peak RSS (`VmHWM`) | 28.73 MiB | 33.51 MiB | +16.6% |
-| | Delete Duration | 0.006 s | 0.006 s | ~Parity (±1%) |
-| | Post-Delete RSS | 29.57 MiB | 27.23 MiB | -7.9% |
-| | **Retained Heap vs Baseline** | **+8.34 MiB** | **+1.20 MiB** | **-7.14 MiB** |
-|---|---|---|---|---|
-| **100000** | Baseline RSS | 21.30 MiB | 25.86 MiB | +21.4% |
-| | Add Duration | 2.941 s | 2.791 s | -5.1% |
-| | Add Rate | 34,007 ops/s | 35,830 ops/s | +5.4% |
-| | Peak RSS (`VmHWM`) | 95.27 MiB | 97.46 MiB | +2.3% |
-| | Delete Duration | 0.029 s | 0.027 s | -6.9% |
-| | Post-Delete RSS | 100.83 MiB | 27.44 MiB | -72.8% |
-| | **Retained Heap vs Baseline** | **+79.53 MiB** | **+1.58 MiB** | **-77.95 MiB** |
+| | Total Pod Post-Delete RSS | 77.48 MiB | 82.07 MiB | +5.9% |
+| | **Total Pod Retained Heap** | **+2.67 MiB** | **+2.69 MiB** | **+0.02 MiB** |
+| | ├─ `ovn-northd` (Peak / Retained) | 14.12 / +0.43 MiB | 15.18 / +0.46 MiB | +7.5% / +0.03 MiB |
+| | ├─ `ovn-controller` (Peak / Retained) | 12.03 / +0.33 MiB | 12.82 / +0.34 MiB | +6.6% / +0.01 MiB |
+| | ├─ `ovs-vswitchd` (Peak / Retained) | 19.39 / +0.04 MiB | 21.19 / +0.02 MiB | +9.3% / -0.02 MiB |
+| | ├─ `ovsdb-server (SB)` (Peak / Retained) | 9.74 / +0.63 MiB | 10.19 / +0.62 MiB | +4.6% / -0.01 MiB |
+| | ├─ `ovsdb-server (NB)` (Peak / Retained) | 9.79 / +0.62 MiB | 10.04 / +0.62 MiB | +2.6% / +0.00 MiB |
+| | ├─ `ovsdb-server (OVS)` (Peak / Retained) | 9.74 / +0.62 MiB | 9.96 / +0.63 MiB | +2.3% / +0.01 MiB |
 |---|---|---|---|---|
 
 ### Visual Charts
@@ -564,9 +582,9 @@ config:
 xychart-beta
     title "OpenFlow Flows (OVS Control Plane) - Insertion Rate"
     x-axis ["1", "10", "100", "1k", "10k", "100k"]
-    y-axis "ops/s" 0 --> 43003
-    line "glibc malloc" [368.3, 3762.2, 14863.3, 33453.8, 36676.5, 34007.0]
-    line "jemalloc" [285.6, 1796.9, 10830.7, 27740.0, 37393.5, 35830.6]
+    y-axis "ops/s" 0 --> 30864198
+    line "glibc malloc" [351.0, 2203.6, 14718.9, 28388.1, 35532.7, 16583747.9]
+    line "jemalloc" [195.1, 2532.9, 13821.7, 26208.2, 32713.8, 26838432.6]
 ```
 
 
@@ -580,96 +598,9 @@ config:
 xychart-beta
     title "OpenFlow Flows (OVS Control Plane) - Peak Memory"
     x-axis ["1", "10", "100", "1k", "10k", "100k"]
-    y-axis "Peak RSS (MiB)" 0 --> 113
-    line "glibc malloc" [21.5, 21.5, 21.4, 22.0, 28.7, 95.3]
-    line "jemalloc" [26.0, 26.0, 26.1, 26.7, 33.5, 97.5]
-```
-
-
-## OVS Datapath Packet Forwarding & Megaflow Cache
-
-| Scale (N) | Phase / Metric | glibc malloc | jemalloc | Relative Difference |
-|---|---|---|---|---|
-| **1** | Baseline RSS | 21.56 MiB | 26.08 MiB | +21.0% |
-| | Forwarding Duration | 0.002 s | 0.001 s | -50.0% |
-| | Forwarding Rate | 446 pkts/s | 684 pkts/s | +53.6% |
-| | Peak RSS (`VmHWM`) | 21.56 MiB | 26.08 MiB | +21.0% |
-| | Flow Flush Duration (`dpctl/del-flows`) | 0.002 s | 0.002 s | ~Parity (±1%) |
-| | Post-Delete RSS | 21.56 MiB | 26.12 MiB | +21.2% |
-| | **Retained Heap vs Baseline** | **+0.00 MiB** | **+0.04 MiB** | **+0.04 MiB** |
-|---|---|---|---|---|
-| **10** | Baseline RSS | 21.34 MiB | 26.09 MiB | +22.3% |
-| | Forwarding Duration | 0.002 s | 0.002 s | ~Parity (±1%) |
-| | Forwarding Rate | 4,304 pkts/s | 4,659 pkts/s | +8.2% |
-| | Peak RSS (`VmHWM`) | 21.34 MiB | 26.16 MiB | +22.6% |
-| | Flow Flush Duration (`dpctl/del-flows`) | 0.002 s | 0.002 s | ~Parity (±1%) |
-| | Post-Delete RSS | 21.40 MiB | 26.17 MiB | +22.3% |
-| | **Retained Heap vs Baseline** | **+0.06 MiB** | **+0.08 MiB** | **+0.02 MiB** |
-|---|---|---|---|---|
-| **100** | Baseline RSS | 21.52 MiB | 26.08 MiB | +21.2% |
-| | Forwarding Duration | 0.002 s | 0.001 s | -50.0% |
-| | Forwarding Rate | 43,917 pkts/s | 71,633 pkts/s | +63.1% |
-| | Peak RSS (`VmHWM`) | 21.52 MiB | 26.16 MiB | +21.6% |
-| | Flow Flush Duration (`dpctl/del-flows`) | 0.002 s | 0.001 s | -50.0% |
-| | Post-Delete RSS | 21.53 MiB | 26.14 MiB | +21.4% |
-| | **Retained Heap vs Baseline** | **+0.01 MiB** | **+0.06 MiB** | **+0.05 MiB** |
-|---|---|---|---|---|
-| **1000** | Baseline RSS | 21.56 MiB | 25.98 MiB | +20.5% |
-| | Forwarding Duration | 0.006 s | 0.006 s | ~Parity (±1%) |
-| | Forwarding Rate | 161,786 pkts/s | 174,916 pkts/s | +8.1% |
-| | Peak RSS (`VmHWM`) | 21.65 MiB | 26.09 MiB | +20.5% |
-| | Flow Flush Duration (`dpctl/del-flows`) | 0.002 s | 0.002 s | ~Parity (±1%) |
-| | Post-Delete RSS | 21.66 MiB | 26.16 MiB | +20.8% |
-| | **Retained Heap vs Baseline** | **+0.10 MiB** | **+0.18 MiB** | **+0.08 MiB** |
-|---|---|---|---|---|
-| **10000** | Baseline RSS | 21.55 MiB | 26.06 MiB | +20.9% |
-| | Forwarding Duration | 0.054 s | 0.053 s | -1.9% |
-| | Forwarding Rate | 184,699 pkts/s | 187,034 pkts/s | +1.3% |
-| | Peak RSS (`VmHWM`) | 21.66 MiB | 26.11 MiB | +20.5% |
-| | Flow Flush Duration (`dpctl/del-flows`) | 0.002 s | 0.002 s | ~Parity (±1%) |
-| | Post-Delete RSS | 21.66 MiB | 26.11 MiB | +20.5% |
-| | **Retained Heap vs Baseline** | **+0.11 MiB** | **+0.05 MiB** | **-0.06 MiB** |
-|---|---|---|---|---|
-| **100000** | Baseline RSS | 21.45 MiB | 26.20 MiB | +22.1% |
-| | Forwarding Duration | 0.538 s | 0.529 s | -1.7% |
-| | Forwarding Rate | 185,947 pkts/s | 188,931 pkts/s | +1.6% |
-| | Peak RSS (`VmHWM`) | 21.59 MiB | 26.27 MiB | +21.7% |
-| | Flow Flush Duration (`dpctl/del-flows`) | 0.002 s | 0.002 s | ~Parity (±1%) |
-| | Post-Delete RSS | 21.59 MiB | 26.30 MiB | +21.8% |
-| | **Retained Heap vs Baseline** | **+0.14 MiB** | **+0.10 MiB** | **-0.04 MiB** |
-|---|---|---|---|---|
-
-### Visual Charts
-
-```mermaid
----
-config:
-    themeVariables:
-        xyChart:
-            plotColorPalette: "#1f77b4, #ff7f0e"
----
-xychart-beta
-    title "OVS Datapath Packet Forwarding & Megaflow Cache - Forwarding Rate"
-    x-axis ["1", "10", "100", "1k", "10k", "100k"]
-    y-axis "pkts/s" 0 --> 217272
-    line "glibc malloc" [446.0, 4304.8, 43917.4, 161786.1, 184699.5, 185947.6]
-    line "jemalloc" [684.9, 4659.8, 71633.2, 174916.9, 187034.8, 188931.6]
-```
-
-
-```mermaid
----
-config:
-    themeVariables:
-        xyChart:
-            plotColorPalette: "#1f77b4, #ff7f0e"
----
-xychart-beta
-    title "OVS Datapath Packet Forwarding & Megaflow Cache - Peak Memory"
-    x-axis ["1", "10", "100", "1k", "10k", "100k"]
-    y-axis "Peak RSS (MiB)" 0 --> 31
-    line "glibc malloc" [21.6, 21.3, 21.5, 21.6, 21.7, 21.6]
-    line "jemalloc" [26.1, 26.2, 26.2, 26.1, 26.1, 26.3]
+    y-axis "Peak RSS (MiB)" 0 --> 92
+    line "glibc malloc" [21.6, 74.7, 21.4, 22.2, 28.8, 74.8]
+    line "jemalloc" [26.0, 79.7, 26.2, 26.7, 33.3, 79.4]
 ```
 
 
@@ -677,71 +608,71 @@ xychart-beta
 
 | Scale (N) | Phase / Metric | glibc malloc | jemalloc | Relative Difference |
 |---|---|---|---|---|
-| **1** | Baseline RSS | 10.29 MiB | 12.09 MiB | +17.5% |
+| **1** | Total Pod Baseline RSS | 10.18 MiB | 12.03 MiB | +18.2% |
 | | Add Duration | 0.008 s | 0.007 s | -12.5% |
-| | Add Rate | 122 ops/s | 139 ops/s | +13.4% |
-| | Recompute (`ovn-northd-loop`) | 4.8 ms | 5.4 ms | +12.3% |
+| | Add Rate | 124 ops/s | 137 ops/s | +10.5% |
+| | Recompute (`ovn-northd-loop`) | 4.9 ms | 5.3 ms | +8.0% |
 | | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
-| | Peak RSS (`VmHWM`) | 11.10 MiB | 12.88 MiB | +16.0% |
-| | Delete Duration | 0.005 s | 0.003 s | -40.0% |
-| | Post-Delete Recompute | 1.0 ms | 1.0 ms | ~Parity (±1%) |
-| | Post-Delete RSS | 11.10 MiB | 12.73 MiB | +14.7% |
-| | **Retained Heap vs Baseline** | **+0.81 MiB** | **+0.64 MiB** | **-0.17 MiB** |
+| | Total Pod Peak RSS (`VmHWM`) | 11.05 MiB | 12.78 MiB | +15.7% |
+| | Delete Duration | 0.004 s | 0.004 s | ~Parity (±1%) |
+| | Post-Delete Recompute | 1.0 ms | 5.0 ms | +402.3% |
+| | Total Pod Post-Delete RSS | 10.58 MiB | 12.64 MiB | +19.5% |
+| | **Total Pod Retained Heap** | **+0.40 MiB** | **+0.61 MiB** | **+0.21 MiB** |
 |---|---|---|---|---|
-| **10** | Baseline RSS | 10.27 MiB | 12.05 MiB | +17.3% |
-| | Add Duration | 0.010 s | 0.011 s | +10.0% |
-| | Add Rate | 1,011 ops/s | 912 ops/s | -9.7% |
-| | Recompute (`ovn-northd-loop`) | 5.5 ms | 1.0 ms | -81.8% |
+| **10** | Total Pod Baseline RSS | 10.28 MiB | 12.03 MiB | +17.0% |
+| | Add Duration | 0.013 s | 0.010 s | -23.1% |
+| | Add Rate | 768 ops/s | 1,051 ops/s | +36.8% |
+| | Recompute (`ovn-northd-loop`) | 1.0 ms | 5.2 ms | +417.2% |
 | | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
-| | Peak RSS (`VmHWM`) | 11.50 MiB | 13.18 MiB | +14.6% |
-| | Delete Duration | 0.007 s | 0.003 s | -57.1% |
-| | Post-Delete Recompute | 6.0 ms | 4.5 ms | -24.9% |
-| | Post-Delete RSS | 11.50 MiB | 12.84 MiB | +11.7% |
-| | **Retained Heap vs Baseline** | **+1.23 MiB** | **+0.79 MiB** | **-0.44 MiB** |
+| | Total Pod Peak RSS (`VmHWM`) | 11.45 MiB | 13.23 MiB | +15.5% |
+| | Delete Duration | 0.004 s | 0.004 s | ~Parity (±1%) |
+| | Post-Delete Recompute | 1.0 ms | 5.0 ms | +397.3% |
+| | Total Pod Post-Delete RSS | 10.71 MiB | 12.89 MiB | +20.4% |
+| | **Total Pod Retained Heap** | **+0.43 MiB** | **+0.86 MiB** | **+0.43 MiB** |
 |---|---|---|---|---|
-| **100** | Baseline RSS | 10.32 MiB | 12.08 MiB | +17.1% |
-| | Add Duration | 0.027 s | 0.025 s | -7.4% |
-| | Add Rate | 3,736 ops/s | 3,977 ops/s | +6.4% |
-| | Recompute (`ovn-northd-loop`) | 1.0 ms | 2.0 ms | +100.0% |
-| | Logical Flow (`lflow`) | 0.0 ms | 1.0 ms | N/A |
-| | Peak RSS (`VmHWM`) | 13.82 MiB | 15.78 MiB | +14.2% |
-| | Delete Duration | 0.016 s | 0.008 s | -50.0% |
-| | Post-Delete Recompute | 5.0 ms | 5.7 ms | +13.9% |
-| | Post-Delete RSS | 13.83 MiB | 13.35 MiB | -3.5% |
-| | **Retained Heap vs Baseline** | **+3.51 MiB** | **+1.27 MiB** | **-2.24 MiB** |
-|---|---|---|---|---|
-| **1000** | Baseline RSS | 10.32 MiB | 11.87 MiB | +15.0% |
-| | Add Duration | 0.321 s | 0.252 s | -21.5% |
-| | Add Rate | 3,113 ops/s | 3,961 ops/s | +27.2% |
-| | Recompute (`ovn-northd-loop`) | 14.0 ms | 10.0 ms | -28.6% |
-| | Logical Flow (`lflow`) | 6.0 ms | 6.0 ms | ~Parity (±1%) |
-| | Peak RSS (`VmHWM`) | 48.57 MiB | 43.36 MiB | -10.7% |
-| | Delete Duration | 0.166 s | 0.080 s | -51.8% |
+| **100** | Total Pod Baseline RSS | 10.25 MiB | 12.07 MiB | +17.8% |
+| | Add Duration | 0.033 s | 0.031 s | -6.1% |
+| | Add Rate | 3,025 ops/s | 3,268 ops/s | +8.0% |
+| | Recompute (`ovn-northd-loop`) | 2.0 ms | 2.0 ms | ~Parity (±1%) |
+| | Logical Flow (`lflow`) | 2.0 ms | 1.0 ms | -50.0% |
+| | Total Pod Peak RSS (`VmHWM`) | 14.81 MiB | 15.69 MiB | +5.9% |
+| | Delete Duration | 0.015 s | 0.009 s | -40.0% |
 | | Post-Delete Recompute | 1.0 ms | 1.0 ms | ~Parity (±1%) |
-| | Post-Delete RSS | 47.27 MiB | 14.60 MiB | -69.1% |
-| | **Retained Heap vs Baseline** | **+36.95 MiB** | **+2.73 MiB** | **-34.22 MiB** |
+| | Total Pod Post-Delete RSS | 11.09 MiB | 13.27 MiB | +19.7% |
+| | **Total Pod Retained Heap** | **+0.84 MiB** | **+1.20 MiB** | **+0.36 MiB** |
 |---|---|---|---|---|
-| **5000** | Baseline RSS | 14.14 MiB | 15.23 MiB | +7.7% |
+| **1000** | Total Pod Baseline RSS | 10.21 MiB | 12.11 MiB | +18.6% |
+| | Add Duration | 0.303 s | 0.243 s | -19.8% |
+| | Add Rate | 3,304 ops/s | 4,112 ops/s | +24.5% |
+| | Recompute (`ovn-northd-loop`) | 11.0 ms | 9.0 ms | -18.2% |
+| | Logical Flow (`lflow`) | 6.0 ms | 5.0 ms | -16.7% |
+| | Total Pod Peak RSS (`VmHWM`) | 48.49 MiB | 42.61 MiB | -12.1% |
+| | Delete Duration | 0.172 s | 0.078 s | -54.7% |
+| | Post-Delete Recompute | 1.0 ms | 4.8 ms | +375.7% |
+| | Total Pod Post-Delete RSS | 11.73 MiB | 14.77 MiB | +25.9% |
+| | **Total Pod Retained Heap** | **+1.52 MiB** | **+2.66 MiB** | **+1.14 MiB** |
+|---|---|---|---|---|
+| **5000** | Total Pod Baseline RSS | 14.14 MiB | 15.23 MiB | +7.7% |
 | | Add Duration | 1.740 s | 1.406 s | -19.2% |
 | | Add Rate | 2,874 ops/s | 3,556 ops/s | +23.7% |
 | | Recompute (`ovn-northd-loop`) | 84.0 ms | 69.0 ms | -17.9% |
 | | Logical Flow (`lflow`) | 15.0 ms | 14.0 ms | -6.7% |
-| | Peak RSS (`VmHWM`) | 184.18 MiB | 163.27 MiB | -11.4% |
+| | Total Pod Peak RSS (`VmHWM`) | 184.18 MiB | 163.27 MiB | -11.4% |
 | | Delete Duration | 0.929 s | 0.459 s | -50.6% |
 | | Post-Delete Recompute | 11.0 ms | 8.0 ms | -27.3% |
-| | Post-Delete RSS | 180.16 MiB | 20.95 MiB | -88.4% |
-| | **Retained Heap vs Baseline** | **+166.02 MiB** | **+5.72 MiB** | **-160.30 MiB** |
+| | Total Pod Post-Delete RSS | 180.16 MiB | 20.95 MiB | -88.4% |
+| | **Total Pod Retained Heap** | **+166.02 MiB** | **+5.72 MiB** | **-160.30 MiB** |
 |---|---|---|---|---|
-| **10000** | Baseline RSS | 14.13 MiB | 15.22 MiB | +7.7% |
-| | Add Duration | 3.715 s | 3.133 s | -15.7% |
-| | Add Rate | 2,692 ops/s | 3,191 ops/s | +18.6% |
-| | Recompute (`ovn-northd-loop`) | 183.0 ms | 141.0 ms | -23.0% |
-| | Logical Flow (`lflow`) | 33.0 ms | 27.0 ms | -18.2% |
-| | Peak RSS (`VmHWM`) | 378.94 MiB | 305.08 MiB | -19.5% |
-| | Delete Duration | 2.002 s | 1.018 s | -49.2% |
-| | Post-Delete Recompute | 19.0 ms | 14.0 ms | -26.3% |
-| | Post-Delete RSS | 363.67 MiB | 23.50 MiB | -93.5% |
-| | **Retained Heap vs Baseline** | **+349.54 MiB** | **+8.28 MiB** | **-341.26 MiB** |
+| **10000** | Total Pod Baseline RSS | 10.38 MiB | 12.04 MiB | +16.0% |
+| | Add Duration | 4.824 s | 4.112 s | -14.8% |
+| | Add Rate | 2,072 ops/s | 2,431 ops/s | +17.3% |
+| | Recompute (`ovn-northd-loop`) | 205.0 ms | 162.0 ms | -21.0% |
+| | Logical Flow (`lflow`) | 105.0 ms | 91.0 ms | -13.3% |
+| | Total Pod Peak RSS (`VmHWM`) | 403.65 MiB | 314.30 MiB | -22.1% |
+| | Delete Duration | 3.000 s | 1.265 s | -57.8% |
+| | Post-Delete Recompute | 68.0 ms | 33.0 ms | -51.5% |
+| | Total Pod Post-Delete RSS | 14.60 MiB | 20.49 MiB | +40.3% |
+| | **Total Pod Retained Heap** | **+4.22 MiB** | **+8.45 MiB** | **+4.23 MiB** |
 |---|---|---|---|---|
 
 ### Visual Charts
@@ -756,9 +687,9 @@ config:
 xychart-beta
     title "Combined Workload (All objects scaled proportionally) - Recompute Latency"
     x-axis ["1", "10", "100", "1k", "5k", "10k"]
-    y-axis "northd-loop (ms)" 0 --> 211
-    line "glibc malloc" [4.8, 5.5, 1.0, 14.0, 84.0, 183.0]
-    line "jemalloc" [5.4, 1.0, 2.0, 10.0, 69.0, 141.0]
+    y-axis "northd-loop (ms)" 0 --> 236
+    line "glibc malloc" [4.9, 1.0, 2.0, 11.0, 84.0, 205.0]
+    line "jemalloc" [5.3, 5.2, 2.0, 9.0, 69.0, 162.0]
 ```
 
 
@@ -772,8 +703,8 @@ config:
 xychart-beta
     title "Combined Workload (All objects scaled proportionally) - Peak Memory"
     x-axis ["1", "10", "100", "1k", "5k", "10k"]
-    y-axis "Peak RSS (MiB)" 0 --> 436
-    line "glibc malloc" [11.1, 11.5, 13.8, 48.6, 184.2, 378.9]
-    line "jemalloc" [12.9, 13.2, 15.8, 43.4, 163.3, 305.1]
+    y-axis "Peak RSS (MiB)" 0 --> 465
+    line "glibc malloc" [11.1, 11.4, 14.8, 48.5, 184.2, 403.6]
+    line "jemalloc" [12.8, 13.2, 15.7, 42.6, 163.3, 314.3]
 ```
 

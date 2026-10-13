@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"syscall"
@@ -88,19 +89,27 @@ type ProcMem struct {
 	VmHWM float64 `json:"vm_hwm_mib"`
 }
 
+type ComponentMem struct {
+	BaselineRSS float64 `json:"baseline_rss_mib"`
+	PeakRSS     float64 `json:"peak_rss_mib"`
+	PostDelRSS  float64 `json:"post_del_rss_mib"`
+	RetainedRSS float64 `json:"retained_rss_mib"`
+}
+
 type BenchResult struct {
-	BaselineRSS  float64            `json:"baseline_rss_mib"`
-	AddSec       float64            `json:"add_sec"`
-	AddRate      float64            `json:"add_rate"`
-	AddLoopMs    float64            `json:"add_loop_ms"`
-	AddLflowMs   float64            `json:"add_lflow_ms"`
-	PeakRSS      float64            `json:"peak_rss_mib"`
-	DelSec       float64            `json:"del_sec"`
-	DelLoopMs    float64            `json:"del_loop_ms"`
-	PostDelRSS   float64            `json:"post_del_rss_mib"`
-	RetainedRSS  float64            `json:"retained_rss_mib"`
-	ThreadLoops  map[string]float64 `json:"thread_loops,omitempty"`
-	ThreadLflows map[string]float64 `json:"thread_lflows,omitempty"`
+	BaselineRSS  float64                 `json:"baseline_rss_mib"`
+	AddSec       float64                 `json:"add_sec"`
+	AddRate      float64                 `json:"add_rate"`
+	AddLoopMs    float64                 `json:"add_loop_ms"`
+	AddLflowMs   float64                 `json:"add_lflow_ms"`
+	PeakRSS      float64                 `json:"peak_rss_mib"`
+	DelSec       float64                 `json:"del_sec"`
+	DelLoopMs    float64                 `json:"del_loop_ms"`
+	PostDelRSS   float64                 `json:"post_del_rss_mib"`
+	RetainedRSS  float64                 `json:"retained_rss_mib"`
+	Components   map[string]ComponentMem `json:"components,omitempty"`
+	ThreadLoops  map[string]float64      `json:"thread_loops,omitempty"`
+	ThreadLflows map[string]float64      `json:"thread_lflows,omitempty"`
 }
 
 func getDBModel() (model.ClientDBModel, error) {
@@ -148,12 +157,38 @@ func findSchema(name string) (string, error) {
 		"/usr/local/share/ovn/" + name,
 		"/usr/share/openvswitch/" + name,
 		"/usr/local/share/openvswitch/" + name,
-		"/home/ljouin/workspaces/ovn-org/ovn/" + name,
-		"/home/ljouin/workspaces/openvswitch/ovs/vswitchd/" + name,
+		filepath.Join(".", name),
+		filepath.Join("..", name),
+	}
+	if envPath := os.Getenv("OVN_SCHEMA_DIR"); envPath != "" {
+		searchPaths = append([]string{filepath.Join(envPath, name)}, searchPaths...)
+	}
+	if envPath := os.Getenv("OVS_SCHEMA_DIR"); envPath != "" {
+		searchPaths = append([]string{filepath.Join(envPath, name)}, searchPaths...)
 	}
 	for _, p := range searchPaths {
 		if _, err := os.Stat(p); err == nil {
 			return p, nil
+		}
+	}
+	// Also check adjacent checkout directories if running in a multi-repo workspace
+	candidateGlobs := []string{
+		filepath.Join("..", "*", name),
+		filepath.Join("..", "*", "*", name),
+		filepath.Join("..", "..", "*", name),
+		filepath.Join("..", "..", "*", "*", name),
+		filepath.Join("..", "..", "*", "*", "*", name),
+	}
+	if homeDir, err := os.UserHomeDir(); err == nil {
+		candidateGlobs = append(candidateGlobs,
+			filepath.Join(homeDir, "workspaces", "*", name),
+			filepath.Join(homeDir, "workspaces", "*", "*", name),
+			filepath.Join(homeDir, "workspaces", "*", "*", "*", name),
+		)
+	}
+	for _, pattern := range candidateGlobs {
+		if matches, err := filepath.Glob(pattern); err == nil && len(matches) > 0 {
+			return matches[0], nil
 		}
 	}
 	return "", fmt.Errorf("schema %q not found", name)
@@ -254,30 +289,53 @@ const (
 )
 
 type OVNEnvironment struct {
-	alloc        string
-	jemallocConf string
-	ovsDir       string
-	ovnDir       string
-	testDir      string
-	nThreads     int
-	nbSock       string
-	sbSock       string
-	northdPid    int
-	ovsdbTool    string
-	ovsdbServer  string
-	ovnNbctl     string
-	ovnSbctl     string
-	ovnNorthd    string
-	ovnAppctl    string
-	ovsdbClient  client.Client
+	alloc         string
+	jemallocConf  string
+	ovsDir        string
+	ovnDir        string
+	testDir       string
+	nThreads      int
+	trimTimeoutMs int
+	nbSock        string
+	sbSock        string
+	ovsSock       string
+	northdPid     int
+	controllerPid int
+	vswitchdPid   int
+	nbServerPid   int
+	sbServerPid   int
+	ovsServerPid  int
+	ovsdbTool     string
+	ovsdbServer   string
+	ovsVsctl      string
+	ovsOfctl      string
+	ovsVswitchd   string
+	ovnNbctl      string
+	ovnSbctl      string
+	ovnNorthd     string
+	ovnController string
+	ovnAppctl     string
+	ovsdbClient   client.Client
 }
 
-func NewOVNEnvironment(alloc, jemallocConf, ovsDir, ovnDir, testDir string, nThreads int) (*OVNEnvironment, error) {
+func NewOVNEnvironment(alloc, jemallocConf, ovsDir, ovnDir, testDir string, nThreads, trimTimeoutMs int) (*OVNEnvironment, error) {
 	tool, err := findBinary("ovsdb-tool", ovsDir)
 	if err != nil {
 		return nil, err
 	}
 	server, err := findBinary("ovsdb-server", ovsDir)
+	if err != nil {
+		return nil, err
+	}
+	vsctl, err := findBinary("ovs-vsctl", ovsDir)
+	if err != nil {
+		return nil, err
+	}
+	ofctl, err := findBinary("ovs-ofctl", ovsDir)
+	if err != nil {
+		return nil, err
+	}
+	vswitchd, err := findBinary("ovs-vswitchd", ovsDir)
 	if err != nil {
 		return nil, err
 	}
@@ -293,26 +351,36 @@ func NewOVNEnvironment(alloc, jemallocConf, ovsDir, ovnDir, testDir string, nThr
 	if err != nil {
 		return nil, err
 	}
-	appctl, err := findBinary("ovn-appctl", ovnDir)
+	controller, err := findBinary("ovn-controller", ovnDir)
 	if err != nil {
 		return nil, err
 	}
+	appctl, err := findBinary("ovn-appctl", ovnDir)
+	if err != nil {
+		appctl, _ = findBinary("ovs-appctl", ovsDir)
+	}
 
 	return &OVNEnvironment{
-		alloc:        alloc,
-		jemallocConf: jemallocConf,
-		ovsDir:       ovsDir,
-		ovnDir:       ovnDir,
-		testDir:      testDir,
-		nThreads:     nThreads,
-		nbSock:       "unix:" + filepath.Join(testDir, "nb.sock"),
-		sbSock:       "unix:" + filepath.Join(testDir, "sb.sock"),
-		ovsdbTool:    tool,
-		ovsdbServer:  server,
-		ovnNbctl:     nbctl,
-		ovnSbctl:     sbctl,
-		ovnNorthd:    northd,
-		ovnAppctl:    appctl,
+		alloc:         alloc,
+		jemallocConf:  jemallocConf,
+		ovsDir:        ovsDir,
+		ovnDir:        ovnDir,
+		testDir:       testDir,
+		nThreads:      nThreads,
+		trimTimeoutMs: trimTimeoutMs,
+		nbSock:        "unix:" + filepath.Join(testDir, "nb.sock"),
+		sbSock:        "unix:" + filepath.Join(testDir, "sb.sock"),
+		ovsSock:       "unix:" + filepath.Join(testDir, "ovs.sock"),
+		ovsdbTool:     tool,
+		ovsdbServer:   server,
+		ovsVsctl:      vsctl,
+		ovsOfctl:      ofctl,
+		ovsVswitchd:   vswitchd,
+		ovnNbctl:      nbctl,
+		ovnSbctl:      sbctl,
+		ovnNorthd:     northd,
+		ovnController: controller,
+		ovnAppctl:     appctl,
 	}, nil
 }
 
@@ -330,9 +398,14 @@ func (e *OVNEnvironment) Start() error {
 	if err != nil {
 		return err
 	}
+	ovsSchema, err := findSchema("vswitch.ovsschema")
+	if err != nil {
+		return err
+	}
 
 	_ = exec.Command(e.ovsdbTool, "create", filepath.Join(e.testDir, "nb.db"), nbSchema).Run()
 	_ = exec.Command(e.ovsdbTool, "create", filepath.Join(e.testDir, "sb.db"), sbSchema).Run()
+	_ = exec.Command(e.ovsdbTool, "create", filepath.Join(e.testDir, "ovs.db"), ovsSchema).Run()
 
 	envVars := os.Environ()
 	if e.alloc == "jemalloc" {
@@ -365,25 +438,90 @@ func (e *OVNEnvironment) Start() error {
 		return err
 	}
 
+	cmdOvs := exec.Command(e.ovsdbServer, "--detach", "--no-chdir",
+		"--pidfile="+filepath.Join(e.testDir, "ovs.pid"),
+		"--unixctl="+filepath.Join(e.testDir, "ovs.ctl"),
+		"--remote=punix:"+filepath.Join(e.testDir, "ovs.sock"),
+		filepath.Join(e.testDir, "ovs.db"))
+	cmdOvs.Env = envVars
+	if err := cmdOvs.Run(); err != nil {
+		return err
+	}
+
 	time.Sleep(100 * time.Millisecond)
 
 	_ = exec.Command(e.ovnNbctl, "--db="+e.nbSock, "init").Run()
-	_ = exec.Command(e.ovnSbctl, "--db="+e.sbSock, "init").Run()
+	_ = exec.Command(e.ovsVsctl, "--db="+e.ovsSock, "--no-wait", "init").Run()
+
+	if e.trimTimeoutMs > 0 {
+		_ = exec.Command(e.ovnNbctl, "--db="+e.nbSock, "set", "NB_Global", ".",
+			fmt.Sprintf("options:northd_trim_timeout=%d", e.trimTimeoutMs)).Run()
+		_ = exec.Command(e.ovsVsctl, "--db="+e.ovsSock, "--no-wait", "set", "Open_vSwitch", ".",
+			fmt.Sprintf("external_ids:ovn-trim-timeout-ms=%d", e.trimTimeoutMs),
+			"external_ids:ovn-trim-limit-lflow-cache=1000",
+			"external_ids:ovn-trim-wmark-perc-lflow-cache=50").Run()
+	}
+
+	_ = exec.Command(e.ovsVsctl, "--db="+e.ovsSock, "--no-wait",
+		"set", "Open_vSwitch", ".",
+		"external_ids:system-id=chassis-1",
+		"external_ids:ovn-remote="+e.sbSock,
+		"external_ids:ovn-encap-type=geneve",
+		"external_ids:ovn-encap-ip=127.0.0.1",
+		"external_ids:ovn-bridge=br-int",
+	).Run()
+
+	_ = exec.Command(e.ovsVsctl, "--db="+e.ovsSock, "--no-wait",
+		"add-br", "br-int", "--",
+		"set", "bridge", "br-int", "fail-mode=secure", "datapath_type=dummy").Run()
+
+	cmdVswitchd := exec.Command(e.ovsVswitchd, "--enable-dummy=override", "--detach", "--no-chdir",
+		"--pidfile="+filepath.Join(e.testDir, "vswitchd.pid"),
+		"--unixctl="+filepath.Join(e.testDir, "vswitchd.ctl"),
+		e.ovsSock)
+	cmdVswitchd.Env = envVars
+	if err := cmdVswitchd.Run(); err != nil {
+		return err
+	}
 
 	cmdNorthd := exec.Command(e.ovnNorthd, "--detach", "--no-chdir",
 		"--pidfile="+filepath.Join(e.testDir, "northd.pid"),
 		"--unixctl="+filepath.Join(e.testDir, "northd.ctl"),
 		"--ovnnb-db="+e.nbSock, "--ovnsb-db="+e.sbSock,
-		fmt.Sprintf("--n-threads=%d", e.nThreads))
+		fmt.Sprintf("--n-threads=%d", e.nThreads),
+		"-vfile:off", "-vconsole:off")
 	cmdNorthd.Env = envVars
 	if err := cmdNorthd.Run(); err != nil {
 		return err
 	}
 
-	pidData, err := os.ReadFile(filepath.Join(e.testDir, "northd.pid"))
-	if err == nil {
-		e.northdPid, _ = strconv.Atoi(strings.TrimSpace(string(pidData)))
+	cmdController := exec.Command(e.ovnController, "--detach", "--no-chdir",
+		"--pidfile="+filepath.Join(e.testDir, "controller.pid"),
+		"--unixctl="+filepath.Join(e.testDir, "controller.ctl"),
+		"-vfile:off", "-vconsole:off",
+		e.ovsSock)
+	cmdController.Env = envVars
+	if err := cmdController.Run(); err != nil {
+		return err
 	}
+
+	time.Sleep(300 * time.Millisecond)
+
+	readPid := func(p string) int {
+		data, err := os.ReadFile(filepath.Join(e.testDir, p))
+		if err != nil {
+			return 0
+		}
+		pid, _ := strconv.Atoi(strings.TrimSpace(string(data)))
+		return pid
+	}
+
+	e.northdPid = readPid("northd.pid")
+	e.controllerPid = readPid("controller.pid")
+	e.vswitchdPid = readPid("vswitchd.pid")
+	e.nbServerPid = readPid("nb.pid")
+	e.sbServerPid = readPid("sb.pid")
+	e.ovsServerPid = readPid("ovs.pid")
 
 	_ = exec.Command(e.ovnAppctl, "-t", filepath.Join(e.testDir, "northd.ctl"), "inc-engine/enable-stopwatch").Run()
 
@@ -406,6 +544,63 @@ func (e *OVNEnvironment) Start() error {
 	return nil
 }
 
+type PodMemSnapshot struct {
+	TotalRSS  float64
+	TotalPeak float64
+	RSS       map[string]float64
+	Peak      map[string]float64
+}
+
+func (e *OVNEnvironment) sampleMemory() PodMemSnapshot {
+	pids := map[string]int{
+		"ovn-northd":     e.northdPid,
+		"ovn-controller": e.controllerPid,
+		"ovs-vswitchd":   e.vswitchdPid,
+		"ovsdb-nb":       e.nbServerPid,
+		"ovsdb-sb":       e.sbServerPid,
+		"ovsdb-ovs":      e.ovsServerPid,
+	}
+	snap := PodMemSnapshot{
+		RSS:  make(map[string]float64),
+		Peak: make(map[string]float64),
+	}
+	for name, pid := range pids {
+		mem := getProcMem(pid)
+		snap.RSS[name] = mem.VmRSS
+		snap.Peak[name] = mem.VmHWM
+		snap.TotalRSS += mem.VmRSS
+		snap.TotalPeak += mem.VmHWM
+	}
+	snap.TotalRSS = round2(snap.TotalRSS)
+	snap.TotalPeak = round2(snap.TotalPeak)
+	return snap
+}
+
+func buildBenchResult(base, peak, post PodMemSnapshot, addSec, addRate, addLoop, addLflow, delSec, delLoop float64) BenchResult {
+	res := BenchResult{
+		BaselineRSS: round2(base.TotalRSS),
+		PeakRSS:     round2(peak.TotalPeak),
+		PostDelRSS:  round2(post.TotalRSS),
+		RetainedRSS: round2(post.TotalRSS - base.TotalRSS),
+		AddSec:      round3(addSec),
+		AddRate:     round1(addRate),
+		AddLoopMs:   addLoop,
+		AddLflowMs:  addLflow,
+		DelSec:      round3(delSec),
+		DelLoopMs:   delLoop,
+		Components:  make(map[string]ComponentMem),
+	}
+	for name := range base.RSS {
+		res.Components[name] = ComponentMem{
+			BaselineRSS: round2(base.RSS[name]),
+			PeakRSS:     round2(peak.Peak[name]),
+			PostDelRSS:  round2(post.RSS[name]),
+			RetainedRSS: round2(post.RSS[name] - base.RSS[name]),
+		}
+	}
+	return res
+}
+
 func (e *OVNEnvironment) Transact(ctx context.Context, ops ...ovsdb.Operation) ([]ovsdb.OperationResult, error) {
 	res, err := e.ovsdbClient.Transact(ctx, ops...)
 	if err != nil {
@@ -417,6 +612,17 @@ func (e *OVNEnvironment) Transact(ctx context.Context, ops ...ovsdb.Operation) (
 		}
 	}
 	return res, err
+}
+
+func (e *OVNEnvironment) decayWaitTime() time.Duration {
+	wait := decayWaitTime
+	if e.trimTimeoutMs > 0 {
+		req := time.Duration(e.trimTimeoutMs)*time.Millisecond + 1500*time.Millisecond
+		if req > wait {
+			wait = req
+		}
+	}
+	return wait
 }
 
 func (e *OVNEnvironment) Sync() {
@@ -439,19 +645,19 @@ func (e *OVNEnvironment) Recompute() (wallMs, loopMs, lflowMs float64) {
 	}
 	lflowMs = parseStopwatch(string(outLflow))
 
-	if loopMs == 0.0 {
-		loopMs = wallMs
-	}
-	return
+	return wallMs, loopMs, lflowMs
 }
 
 func (e *OVNEnvironment) Stop() {
 	if e.ovsdbClient != nil {
 		e.ovsdbClient.Close()
 	}
+	killPidFile(filepath.Join(e.testDir, "controller.pid"))
 	killPidFile(filepath.Join(e.testDir, "northd.pid"))
-	killPidFile(filepath.Join(e.testDir, "nb.pid"))
+	killPidFile(filepath.Join(e.testDir, "vswitchd.pid"))
+	killPidFile(filepath.Join(e.testDir, "ovs.pid"))
 	killPidFile(filepath.Join(e.testDir, "sb.pid"))
+	killPidFile(filepath.Join(e.testDir, "nb.pid"))
 	_ = os.RemoveAll(e.testDir)
 }
 
@@ -469,7 +675,7 @@ func benchPort(env *OVNEnvironment, n int) BenchResult {
 	}
 	env.Sync()
 	env.Recompute()
-	baseline := getProcMem(env.northdPid)
+	baseline := env.sampleMemory()
 
 	// Phase 2: Add N ports and attach to switch via libovsdb
 	t0 := time.Now()
@@ -507,7 +713,7 @@ func benchPort(env *OVNEnvironment, n int) BenchResult {
 	addSec := float64(time.Since(t0).Microseconds()) / 1e6
 
 	_, addLoop, addLflow := env.Recompute()
-	peak := getProcMem(env.northdPid)
+	peak := env.sampleMemory()
 
 	// Phase 3: Remove N ports from switch and delete rows
 	t1 := time.Now()
@@ -529,21 +735,11 @@ func benchPort(env *OVNEnvironment, n int) BenchResult {
 	delSec := float64(time.Since(t1).Microseconds()) / 1e6
 
 	_, delLoop, _ := env.Recompute()
-	time.Sleep(decayWaitTime)
-	postDel := getProcMem(env.northdPid)
+	time.Sleep(env.decayWaitTime())
+	postDel := env.sampleMemory()
 
-	return BenchResult{
-		BaselineRSS: baseline.VmRSS,
-		AddSec:      round3(addSec),
-		AddRate:     round1(float64(n) / math.Max(addSec, 0.001)),
-		AddLoopMs:   addLoop,
-		AddLflowMs:  addLflow,
-		PeakRSS:     peak.VmHWM,
-		DelSec:      round3(delSec),
-		DelLoopMs:   delLoop,
-		PostDelRSS:  postDel.VmRSS,
-		RetainedRSS: round2(postDel.VmRSS - baseline.VmRSS),
-	}
+	addRate := float64(n) / math.Max(addSec, 0.001)
+	return buildBenchResult(baseline, peak, postDel, addSec, addRate, addLoop, addLflow, delSec, delLoop)
 }
 
 func benchACL(env *OVNEnvironment, n int) BenchResult {
@@ -556,7 +752,7 @@ func benchACL(env *OVNEnvironment, n int) BenchResult {
 	}
 	env.Sync()
 	env.Recompute()
-	baseline := getProcMem(env.northdPid)
+	baseline := env.sampleMemory()
 
 	// Phase 2: Add N ACLs and attach to switch via libovsdb
 	t0 := time.Now()
@@ -594,7 +790,7 @@ func benchACL(env *OVNEnvironment, n int) BenchResult {
 	addSec := float64(time.Since(t0).Microseconds()) / 1e6
 
 	_, addLoop, addLflow := env.Recompute()
-	peak := getProcMem(env.northdPid)
+	peak := env.sampleMemory()
 
 	// Phase 3: Remove N ACLs from switch and delete rows
 	t1 := time.Now()
@@ -616,21 +812,11 @@ func benchACL(env *OVNEnvironment, n int) BenchResult {
 	delSec := float64(time.Since(t1).Microseconds()) / 1e6
 
 	_, delLoop, _ := env.Recompute()
-	time.Sleep(decayWaitTime)
-	postDel := getProcMem(env.northdPid)
+	time.Sleep(env.decayWaitTime())
+	postDel := env.sampleMemory()
 
-	return BenchResult{
-		BaselineRSS: baseline.VmRSS,
-		AddSec:      round3(addSec),
-		AddRate:     round1(float64(n) / math.Max(addSec, 0.001)),
-		AddLoopMs:   addLoop,
-		AddLflowMs:  addLflow,
-		PeakRSS:     peak.VmHWM,
-		DelSec:      round3(delSec),
-		DelLoopMs:   delLoop,
-		PostDelRSS:  postDel.VmRSS,
-		RetainedRSS: round2(postDel.VmRSS - baseline.VmRSS),
-	}
+	addRate := float64(n) / math.Max(addSec, 0.001)
+	return buildBenchResult(baseline, peak, postDel, addSec, addRate, addLoop, addLflow, delSec, delLoop)
 }
 
 func benchAddressSet(env *OVNEnvironment, n int) BenchResult {
@@ -643,7 +829,7 @@ func benchAddressSet(env *OVNEnvironment, n int) BenchResult {
 	}
 	env.Sync()
 	env.Recompute()
-	baseline := getProcMem(env.northdPid)
+	baseline := env.sampleMemory()
 
 	// Phase 2: Create Address Set with N unique IPs via libovsdb
 	t0 := time.Now()
@@ -677,7 +863,7 @@ func benchAddressSet(env *OVNEnvironment, n int) BenchResult {
 	addSec := float64(time.Since(t0).Microseconds()) / 1e6
 
 	_, addLoop, addLflow := env.Recompute()
-	peak := getProcMem(env.northdPid)
+	peak := env.sampleMemory()
 
 	// Phase 3: Remove Address Set & ACL
 	t1 := time.Now()
@@ -704,21 +890,11 @@ func benchAddressSet(env *OVNEnvironment, n int) BenchResult {
 	delSec := float64(time.Since(t1).Microseconds()) / 1e6
 
 	_, delLoop, _ := env.Recompute()
-	time.Sleep(decayWaitTime)
-	postDel := getProcMem(env.northdPid)
+	time.Sleep(env.decayWaitTime())
+	postDel := env.sampleMemory()
 
-	return BenchResult{
-		BaselineRSS: baseline.VmRSS,
-		AddSec:      round3(addSec),
-		AddRate:     round1(float64(n) / math.Max(addSec, 0.001)),
-		AddLoopMs:   addLoop,
-		AddLflowMs:  addLflow,
-		PeakRSS:     peak.VmHWM,
-		DelSec:      round3(delSec),
-		DelLoopMs:   delLoop,
-		PostDelRSS:  postDel.VmRSS,
-		RetainedRSS: round2(postDel.VmRSS - baseline.VmRSS),
-	}
+	addRate := float64(n) / math.Max(addSec, 0.001)
+	return buildBenchResult(baseline, peak, postDel, addSec, addRate, addLoop, addLflow, delSec, delLoop)
 }
 
 func benchPortGroup(env *OVNEnvironment, n int) BenchResult {
@@ -729,7 +905,12 @@ func benchPortGroup(env *OVNEnvironment, n int) BenchResult {
 	if len(resSw) > 0 {
 		sw.UUID = resSw[0].UUID.GoUUID
 	}
+	env.Sync()
+	env.Recompute()
+	baseline := env.sampleMemory()
 
+	// Phase 2: Create N ports on switch, create Port_Group, and attach ACL via libovsdb
+	t0 := time.Now()
 	var allPortUUIDs []string
 	chunkSize := 300
 	for i := 0; i < n; i += chunkSize {
@@ -745,8 +926,10 @@ func benchPortGroup(env *OVNEnvironment, n int) BenchResult {
 			namedUUID := fmt.Sprintf("p_%d", idx)
 			namedUUIDs[j] = namedUUID
 			ports[j] = &LogicalSwitchPort{
-				UUID: namedUUID,
-				Name: fmt.Sprintf("p-%d", idx),
+				UUID:         namedUUID,
+				Name:         fmt.Sprintf("p-%d", idx),
+				Addresses:    []string{fmt.Sprintf("00:00:00:00:%02x:%02x 10.0.%d.%d", (idx>>8)&255, idx&255, (idx>>8)&255, idx&255)},
+				PortSecurity: []string{fmt.Sprintf("00:00:00:00:%02x:%02x 10.0.%d.%d", (idx>>8)&255, idx&255, (idx>>8)&255, idx&255)},
 			}
 		}
 		opsPorts, _ := env.ovsdbClient.Create(ports...)
@@ -762,12 +945,7 @@ func benchPortGroup(env *OVNEnvironment, n int) BenchResult {
 			}
 		}
 	}
-	env.Sync()
-	env.Recompute()
-	baseline := getProcMem(env.northdPid)
 
-	// Phase 2: Create Port_Group with N ports and attach ACL via libovsdb
-	t0 := time.Now()
 	acl := &ACL{
 		UUID:      "acl_pg",
 		Action:    "allow-related",
@@ -787,7 +965,7 @@ func benchPortGroup(env *OVNEnvironment, n int) BenchResult {
 	addSec := float64(time.Since(t0).Microseconds()) / 1e6
 
 	_, addLoop, addLflow := env.Recompute()
-	peak := getProcMem(env.northdPid)
+	peak := env.sampleMemory()
 
 	// Phase 3: Remove Port_Group & ACL & Ports
 	t1 := time.Now()
@@ -819,21 +997,11 @@ func benchPortGroup(env *OVNEnvironment, n int) BenchResult {
 	delSec := float64(time.Since(t1).Microseconds()) / 1e6
 
 	_, delLoop, _ := env.Recompute()
-	time.Sleep(decayWaitTime)
-	postDel := getProcMem(env.northdPid)
+	time.Sleep(env.decayWaitTime())
+	postDel := env.sampleMemory()
 
-	return BenchResult{
-		BaselineRSS: baseline.VmRSS,
-		AddSec:      round3(addSec),
-		AddRate:     round1(float64(n) / math.Max(addSec, 0.001)),
-		AddLoopMs:   addLoop,
-		AddLflowMs:  addLflow,
-		PeakRSS:     peak.VmHWM,
-		DelSec:      round3(delSec),
-		DelLoopMs:   delLoop,
-		PostDelRSS:  postDel.VmRSS,
-		RetainedRSS: round2(postDel.VmRSS - baseline.VmRSS),
-	}
+	addRate := float64(n) / math.Max(addSec, 0.001)
+	return buildBenchResult(baseline, peak, postDel, addSec, addRate, addLoop, addLflow, delSec, delLoop)
 }
 
 func benchLoadBalancer(env *OVNEnvironment, n int) BenchResult {
@@ -846,7 +1014,7 @@ func benchLoadBalancer(env *OVNEnvironment, n int) BenchResult {
 	}
 	env.Sync()
 	env.Recompute()
-	baseline := getProcMem(env.northdPid)
+	baseline := env.sampleMemory()
 
 	// Phase 2: Add N Load Balancers and attach to switch via libovsdb
 	t0 := time.Now()
@@ -885,7 +1053,7 @@ func benchLoadBalancer(env *OVNEnvironment, n int) BenchResult {
 	addSec := float64(time.Since(t0).Microseconds()) / 1e6
 
 	_, addLoop, addLflow := env.Recompute()
-	peak := getProcMem(env.northdPid)
+	peak := env.sampleMemory()
 
 	// Phase 3: Remove N Load Balancers from switch and delete rows
 	t1 := time.Now()
@@ -907,71 +1075,17 @@ func benchLoadBalancer(env *OVNEnvironment, n int) BenchResult {
 	delSec := float64(time.Since(t1).Microseconds()) / 1e6
 
 	_, delLoop, _ := env.Recompute()
-	time.Sleep(decayWaitTime)
-	postDel := getProcMem(env.northdPid)
+	time.Sleep(env.decayWaitTime())
+	postDel := env.sampleMemory()
 
-	return BenchResult{
-		BaselineRSS: baseline.VmRSS,
-		AddSec:      round3(addSec),
-		AddRate:     round1(float64(n) / math.Max(addSec, 0.001)),
-		AddLoopMs:   addLoop,
-		AddLflowMs:  addLflow,
-		PeakRSS:     peak.VmHWM,
-		DelSec:      round3(delSec),
-		DelLoopMs:   delLoop,
-		PostDelRSS:  postDel.VmRSS,
-		RetainedRSS: round2(postDel.VmRSS - baseline.VmRSS),
-	}
+	addRate := float64(n) / math.Max(addSec, 0.001)
+	return buildBenchResult(baseline, peak, postDel, addSec, addRate, addLoop, addLflow, delSec, delLoop)
 }
 
-func benchFlow(alloc, ovsDir, jemallocConf string, n int) BenchResult {
-	testDir := fmt.Sprintf("/tmp/opencode/ovs_flow_bench_%d_%d", os.Getpid(), n)
-	_ = os.RemoveAll(testDir)
-	_ = os.MkdirAll(testDir, 0755)
+func benchFlow(env *OVNEnvironment, n int) BenchResult {
+	baseline := env.sampleMemory()
 
-	envVars := os.Environ()
-	envVars = append(envVars, "OVS_RUNDIR="+testDir, "OVS_LOGDIR="+testDir)
-	if alloc == "jemalloc" {
-		if jlib := findJemallocLib(); jlib != "" {
-			conf := jemallocConf
-			if conf == "" {
-				conf = defaultJemallocConf
-			}
-			envVars = append(envVars, "LD_PRELOAD="+jlib, "MALLOC_CONF="+conf)
-		}
-	}
-
-	tool, _ := findBinary("ovsdb-tool", ovsDir)
-	server, _ := findBinary("ovsdb-server", ovsDir)
-	vsctl, _ := findBinary("ovs-vsctl", ovsDir)
-	vswitchd, _ := findBinary("ovs-vswitchd", ovsDir)
-	ofctl, _ := findBinary("ovs-ofctl", ovsDir)
-	schema, _ := findSchema("vswitch.ovsschema")
-	confDB := filepath.Join(testDir, "conf.db")
-	sock := "unix:" + filepath.Join(testDir, "db.sock")
-
-	_ = exec.Command(tool, "create", confDB, schema).Run()
-	cmdServer := exec.Command(server, "--detach", "--no-chdir",
-		"--pidfile="+filepath.Join(testDir, "ovsdb.pid"),
-		"--remote=punix:"+filepath.Join(testDir, "db.sock"), confDB)
-	cmdServer.Env = envVars
-	_ = cmdServer.Run()
-
-	_ = exec.Command(vsctl, "--db="+sock, "--no-wait", "init").Run()
-
-	cmdVswitchd := exec.Command(vswitchd, "--enable-dummy=override", "--detach", "--no-chdir",
-		"--pidfile="+filepath.Join(testDir, "vswitchd.pid"), sock)
-	cmdVswitchd.Env = envVars
-	_ = cmdVswitchd.Run()
-
-	pidData, _ := os.ReadFile(filepath.Join(testDir, "vswitchd.pid"))
-	vpid, _ := strconv.Atoi(strings.TrimSpace(string(pidData)))
-
-	_ = exec.Command(vsctl, "--db="+sock, "add-br", "br0", "--", "set", "bridge", "br0", "datapath_type=dummy").Run()
-
-	baseline := getProcMem(vpid)
-
-	// Phase 2: Add N OpenFlow rules
+	// Phase 2: Add N OpenFlow rules to br-int
 	var buf bytes.Buffer
 	for i := 0; i < n; i++ {
 		fmt.Fprintf(&buf, "table=%d,priority=%d,ip,nw_src=10.%d.%d.%d,actions=output:%d\n",
@@ -979,141 +1093,28 @@ func benchFlow(alloc, ovsDir, jemallocConf string, n int) BenchResult {
 	}
 
 	t0 := time.Now()
-	cmdOf := exec.Command(ofctl, "add-flows", "br0", "-")
+	cmdOf := exec.Command(env.ovsOfctl, "add-flows", "br-int", "-")
 	cmdOf.Stdin = &buf
-	cmdOf.Env = envVars
 	_ = cmdOf.Run()
 	addSec := float64(time.Since(t0).Microseconds()) / 1e6
-	peak := getProcMem(vpid)
+	peak := env.sampleMemory()
 
 	// Phase 3: Remove N flows
 	t1 := time.Now()
-	cmdDel := exec.Command(ofctl, "del-flows", "br0")
-	cmdDel.Env = envVars
-	_ = cmdDel.Run()
+	_ = exec.Command(env.ovsOfctl, "del-flows", "br-int").Run()
 	delSec := float64(time.Since(t1).Microseconds()) / 1e6
 
-	time.Sleep(decayWaitTime)
-	postDel := getProcMem(vpid)
+	time.Sleep(env.decayWaitTime())
+	postDel := env.sampleMemory()
 
-	killPidFile(filepath.Join(testDir, "vswitchd.pid"))
-	killPidFile(filepath.Join(testDir, "ovsdb.pid"))
-	_ = os.RemoveAll(testDir)
-
-	return BenchResult{
-		BaselineRSS: baseline.VmRSS,
-		AddSec:      round3(addSec),
-		AddRate:     round1(float64(n) / math.Max(addSec, 0.001)),
-		PeakRSS:     peak.VmHWM,
-		DelSec:      round3(delSec),
-		PostDelRSS:  postDel.VmRSS,
-		RetainedRSS: round2(postDel.VmRSS - baseline.VmRSS),
-	}
-}
-
-func benchDatapath(alloc, ovsDir, jemallocConf string, n int) BenchResult {
-	testDir := fmt.Sprintf("/tmp/opencode/ovs_dp_bench_%d_%d", os.Getpid(), n)
-	_ = os.RemoveAll(testDir)
-	_ = os.MkdirAll(testDir, 0755)
-
-	envVars := os.Environ()
-	envVars = append(envVars, "OVS_RUNDIR="+testDir, "OVS_LOGDIR="+testDir)
-	if alloc == "jemalloc" {
-		if jlib := findJemallocLib(); jlib != "" {
-			conf := jemallocConf
-			if conf == "" {
-				conf = defaultJemallocConf
-			}
-			envVars = append(envVars, "LD_PRELOAD="+jlib, "MALLOC_CONF="+conf)
-		}
-	}
-
-	tool, _ := findBinary("ovsdb-tool", ovsDir)
-	server, _ := findBinary("ovsdb-server", ovsDir)
-	vsctl, _ := findBinary("ovs-vsctl", ovsDir)
-	vswitchd, _ := findBinary("ovs-vswitchd", ovsDir)
-	appctl, _ := findBinary("ovs-appctl", ovsDir)
-	ofctl, _ := findBinary("ovs-ofctl", ovsDir)
-	schema, _ := findSchema("vswitch.ovsschema")
-	confDB := filepath.Join(testDir, "conf.db")
-	sock := "unix:" + filepath.Join(testDir, "db.sock")
-	ctl := filepath.Join(testDir, "vswitchd.ctl")
-
-	_ = exec.Command(tool, "create", confDB, schema).Run()
-	cmdServer := exec.Command(server, "--detach", "--no-chdir",
-		"--pidfile="+filepath.Join(testDir, "ovsdb.pid"),
-		"--unixctl="+filepath.Join(testDir, "ovsdb.ctl"),
-		"--remote=punix:"+filepath.Join(testDir, "db.sock"), confDB)
-	cmdServer.Env = envVars
-	_ = cmdServer.Run()
-
-	_ = exec.Command(vsctl, "--db="+sock, "--no-wait", "init").Run()
-	cmdVswitchd := exec.Command(vswitchd, "--enable-dummy=override", "--detach", "--no-chdir",
-		"--pidfile="+filepath.Join(testDir, "vswitchd.pid"),
-		"--unixctl="+ctl, sock)
-	cmdVswitchd.Env = envVars
-	_ = cmdVswitchd.Run()
-
-	time.Sleep(100 * time.Millisecond)
-
-	_ = exec.Command(vsctl, "--db="+sock, "add-br", "br0", "--", "set", "bridge", "br0", "datapath_type=dummy").Run()
-	_ = exec.Command(vsctl, "--db="+sock, "add-port", "br0", "p1", "--", "set", "Interface", "p1", "type=dummy").Run()
-	_ = exec.Command(vsctl, "--db="+sock, "add-port", "br0", "p2", "--", "set", "Interface", "p2", "type=dummy").Run()
-
-	cmdOf := exec.Command(ofctl, "add-flow", "br0", "priority=100,in_port=1,actions=output:2")
-	cmdOf.Env = envVars
-	_ = cmdOf.Run()
-
-	pidData, _ := os.ReadFile(filepath.Join(testDir, "vswitchd.pid"))
-	vpid, _ := strconv.Atoi(strings.TrimSpace(string(pidData)))
-
-	baseline := getProcMem(vpid)
-
-	// Phase 2: Inject N packets through datapath via netdev-dummy/receive
-	t0 := time.Now()
-	pkt := "50540000000250540000000108004500001c00010000400164c70a0000010a0000020800f7ff00000000"
-	chunkSize := 500
-	for i := 0; i < n; i += chunkSize {
-		end := i + chunkSize
-		if end > n {
-			end = n
-		}
-		args := []string{"-t", ctl, "netdev-dummy/receive", "p1"}
-		for j := 0; j < (end - i); j++ {
-			args = append(args, pkt)
-		}
-		_ = exec.Command(appctl, args...).Run()
-	}
-	addSec := float64(time.Since(t0).Microseconds()) / 1e6
-	peak := getProcMem(vpid)
-
-	// Phase 3: Flush datapath flows and measure memory reclamation
-	t1 := time.Now()
-	_ = exec.Command(appctl, "-t", ctl, "dpctl/del-flows").Run()
-	delSec := float64(time.Since(t1).Microseconds()) / 1e6
-
-	time.Sleep(decayWaitTime)
-	postDel := getProcMem(vpid)
-
-	killPidFile(filepath.Join(testDir, "vswitchd.pid"))
-	killPidFile(filepath.Join(testDir, "ovsdb.pid"))
-	_ = os.RemoveAll(testDir)
-
-	return BenchResult{
-		BaselineRSS: baseline.VmRSS,
-		AddSec:      round3(addSec),
-		AddRate:     round1(float64(n) / math.Max(addSec, 0.001)),
-		PeakRSS:     peak.VmHWM,
-		DelSec:      round3(delSec),
-		PostDelRSS:  postDel.VmRSS,
-		RetainedRSS: round2(postDel.VmRSS - baseline.VmRSS),
-	}
+	addRate := float64(n) / math.Max(addSec, 0.001)
+	return buildBenchResult(baseline, peak, postDel, addSec, addRate, 0, 0, delSec, 0)
 }
 
 func benchCombined(env *OVNEnvironment, n int) BenchResult {
 	ctx := context.Background()
 	env.Recompute()
-	baseline := getProcMem(env.northdPid)
+	baseline := env.sampleMemory()
 
 	t0 := time.Now()
 	nSwitches := int(math.Max(1, float64(n/100)))
@@ -1254,7 +1255,7 @@ func benchCombined(env *OVNEnvironment, n int) BenchResult {
 	addSec := float64(time.Since(t0).Microseconds()) / 1e6
 
 	_, addLoop, addLflow := env.Recompute()
-	peak := getProcMem(env.northdPid)
+	peak := env.sampleMemory()
 
 	// Phase 3: Remove all via libovsdb
 	t1 := time.Now()
@@ -1289,21 +1290,11 @@ func benchCombined(env *OVNEnvironment, n int) BenchResult {
 	delSec := float64(time.Since(t1).Microseconds()) / 1e6
 
 	_, delLoop, _ := env.Recompute()
-	time.Sleep(decayWaitTime)
-	postDel := getProcMem(env.northdPid)
+	time.Sleep(env.decayWaitTime())
+	postDel := env.sampleMemory()
 
-	return BenchResult{
-		BaselineRSS: baseline.VmRSS,
-		AddSec:      round3(addSec),
-		AddRate:     round1(float64(n) / math.Max(addSec, 0.001)),
-		AddLoopMs:   addLoop,
-		AddLflowMs:  addLflow,
-		PeakRSS:     peak.VmHWM,
-		DelSec:      round3(delSec),
-		DelLoopMs:   delLoop,
-		PostDelRSS:  postDel.VmRSS,
-		RetainedRSS: round2(postDel.VmRSS - baseline.VmRSS),
-	}
+	addRate := float64(n) / math.Max(addSec, 0.001)
+	return buildBenchResult(baseline, peak, postDel, addSec, addRate, addLoop, addLflow, delSec, delLoop)
 }
 
 // ---------------------------------------------------------------------------
@@ -1379,9 +1370,9 @@ func generateReport(results map[string]map[string]map[string]BenchResult, sysInf
 	lines = append(lines, fmt.Sprintf("**Jemalloc Version:** %s", sysInfo["jemalloc_version"]), "")
 	lines = append(lines, "---", "")
 	lines = append(lines, "## Methodology", "")
-	lines = append(lines, "Each benchmark evaluates individual OVN/OVS objects, dataplane forwarding, or combined workloads across powers of 10 (`1, 10, 100, 1,000, 10,000, 100,000`) through 3 lifecycle phases using **native libovsdb** for database transactions:")
-	lines = append(lines, "1. **Baseline (Idle)**: Clean process RSS before creating objects.")
-	lines = append(lines, "2. **After Add (N)**: Time taken to commit $N$ objects via native OVSDB JSON-RPC, full recompute latency (`ovn-northd-loop` stopwatch), and peak RSS (`VmHWM`).")
+	lines = append(lines, "Each benchmark evaluates individual OVN/OVS objects, OpenFlow rule scaling, or combined workloads across powers of 10 (`1, 10, 100, 1,000, 10,000, 100,000`) through 3 lifecycle phases measuring the full OVN-Kubernetes pod stack (`ovn-northd`, `ovn-controller`, `ovs-vswitchd`, and `ovsdb-servers`):")
+	lines = append(lines, "1. **Baseline (Idle)**: Total Pod and per-daemon clean process RSS before creating objects.")
+	lines = append(lines, "2. **After Add (N)**: Time taken to commit $N$ objects via native OVSDB JSON-RPC, full recompute latency (`ovn-northd-loop` stopwatch), and Total Pod peak RSS (`VmHWM`) with per-daemon breakdown.")
 	lines = append(lines, "3. **After Remove (N)**: Time taken to delete all $N$ objects via native OVSDB JSON-RPC, post-deletion recompute latency, and retained heap memory (`Post-Deletion RSS - Baseline RSS`) measured after a wait period allowing page decay (`dirty_decay_ms:0,muzzy_decay_ms:0`).", "")
 	lines = append(lines, "---", "")
 
@@ -1392,11 +1383,10 @@ func generateReport(results map[string]map[string]map[string]BenchResult, sysInf
 		"port_group":    "Port Group (Ports member grouping matching ACL)",
 		"load_balancer": "Load Balancer (VIPs mapped to endpoints)",
 		"flow":          "OpenFlow Flows (OVS Control Plane)",
-		"datapath":      "OVS Datapath Packet Forwarding & Megaflow Cache",
 		"combined":      "Combined Workload (All objects scaled proportionally)",
 	}
 
-	for _, obj := range []string{"port", "acl", "address_set", "port_group", "load_balancer", "flow", "datapath", "combined"} {
+	for _, obj := range []string{"port", "acl", "address_set", "port_group", "load_balancer", "flow", "combined"} {
 		scalesData, exists := results[obj]
 		if !exists {
 			continue
@@ -1430,21 +1420,15 @@ func generateReport(results map[string]map[string]map[string]BenchResult, sysInf
 			addLabel := "Add Duration"
 			rateLabel := "Add Rate"
 			delLabel := "Delete Duration"
-			if obj == "datapath" {
-				addUnit = "pkts/s"
-				addLabel = "Forwarding Duration"
-				rateLabel = "Forwarding Rate"
-				delLabel = "Flow Flush Duration (`dpctl/del-flows`)"
-			}
 
-			lines = append(lines, fmt.Sprintf("| **%d** | Baseline RSS | %.2f MiB | %.2f MiB | %s |",
+			lines = append(lines, fmt.Sprintf("| **%d** | Total Pod Baseline RSS | %.2f MiB | %.2f MiB | %s |",
 				nVal, g.BaselineRSS, j.BaselineRSS, calcPct(g.BaselineRSS, j.BaselineRSS)))
 			lines = append(lines, fmt.Sprintf("| | %s | %.3f s | %.3f s | %s |",
 				addLabel, g.AddSec, j.AddSec, calcPct(g.AddSec, j.AddSec)))
 			lines = append(lines, fmt.Sprintf("| | %s | %s %s | %s %s | %s |",
 				rateLabel, formatNum(g.AddRate), addUnit, formatNum(j.AddRate), addUnit, calcPct(g.AddRate, j.AddRate)))
 
-			if obj != "flow" && obj != "datapath" {
+			if obj != "flow" {
 				if len(g.ThreadLoops) > 0 {
 					for tKey, gVal := range g.ThreadLoops {
 						jVal := j.ThreadLoops[tKey]
@@ -1459,20 +1443,40 @@ func generateReport(results map[string]map[string]map[string]BenchResult, sysInf
 				}
 			}
 
-			lines = append(lines, fmt.Sprintf("| | Peak RSS (`VmHWM`) | %.2f MiB | %.2f MiB | %s |",
+			lines = append(lines, fmt.Sprintf("| | Total Pod Peak RSS (`VmHWM`) | %.2f MiB | %.2f MiB | %s |",
 				g.PeakRSS, j.PeakRSS, calcPct(g.PeakRSS, j.PeakRSS)))
 			lines = append(lines, fmt.Sprintf("| | %s | %.3f s | %.3f s | %s |",
 				delLabel, g.DelSec, j.DelSec, calcPct(g.DelSec, j.DelSec)))
 
-			if obj != "flow" && obj != "datapath" {
+			if obj != "flow" {
 				lines = append(lines, fmt.Sprintf("| | Post-Delete Recompute | %.1f ms | %.1f ms | %s |",
 					g.DelLoopMs, j.DelLoopMs, calcPct(g.DelLoopMs, j.DelLoopMs)))
 			}
 
-			lines = append(lines, fmt.Sprintf("| | Post-Delete RSS | %.2f MiB | %.2f MiB | %s |",
+			lines = append(lines, fmt.Sprintf("| | Total Pod Post-Delete RSS | %.2f MiB | %.2f MiB | %s |",
 				g.PostDelRSS, j.PostDelRSS, calcPct(g.PostDelRSS, j.PostDelRSS)))
-			lines = append(lines, fmt.Sprintf("| | **Retained Heap vs Baseline** | **%+.2f MiB** | **%+.2f MiB** | **%+.2f MiB** |",
+			lines = append(lines, fmt.Sprintf("| | **Total Pod Retained Heap** | **%+.2f MiB** | **%+.2f MiB** | **%+.2f MiB** |",
 				g.RetainedRSS, j.RetainedRSS, j.RetainedRSS-g.RetainedRSS))
+
+			if len(g.Components) > 0 {
+				compOrder := []struct {
+					key  string
+					name string
+				}{
+					{"ovn-northd", "ovn-northd"},
+					{"ovn-controller", "ovn-controller"},
+					{"ovs-vswitchd", "ovs-vswitchd"},
+					{"ovsdb-sb", "ovsdb-server (SB)"},
+					{"ovsdb-nb", "ovsdb-server (NB)"},
+					{"ovsdb-ovs", "ovsdb-server (OVS)"},
+				}
+				for _, comp := range compOrder {
+					gC := g.Components[comp.key]
+					jC := j.Components[comp.key]
+					lines = append(lines, fmt.Sprintf("| | ├─ `%s` (Peak / Retained) | %.2f / %+.2f MiB | %.2f / %+.2f MiB | %s / %+.2f MiB |",
+						comp.name, gC.PeakRSS, gC.RetainedRSS, jC.PeakRSS, jC.RetainedRSS, calcPct(gC.PeakRSS, jC.PeakRSS), jC.RetainedRSS-gC.RetainedRSS))
+				}
+			}
 			lines = append(lines, "|---|---|---|---|---|")
 		}
 		lines = append(lines, "")
@@ -1506,13 +1510,10 @@ func generateReport(results map[string]map[string]map[string]BenchResult, sysInf
 			}
 
 			lines = append(lines, "### Visual Charts", "")
-			if obj != "flow" && obj != "datapath" {
+			if obj != "flow" {
 				chartTitle := fmt.Sprintf("%s - Recompute Latency", title)
 				lines = append(lines, generateMermaidChart(chartTitle, "northd-loop (ms)", cats, gLoop, jLoop, "line"))
-			} else if obj == "datapath" {
-				chartTitle := fmt.Sprintf("%s - Forwarding Rate", title)
-				lines = append(lines, generateMermaidChart(chartTitle, "pkts/s", cats, gRate, jRate, "line"))
-			} else if obj == "flow" {
+			} else {
 				chartTitle := fmt.Sprintf("%s - Insertion Rate", title)
 				lines = append(lines, generateMermaidChart(chartTitle, "ops/s", cats, gRate, jRate, "line"))
 			}
@@ -1544,22 +1545,24 @@ func formatNum(f float64) string {
 // ---------------------------------------------------------------------------
 
 type Config struct {
-	scales       []int
-	threads      []int
-	objects      []string
-	allocators   []string
-	flowMax      int
-	ovsDir       string
-	ovnDir       string
-	useSystem    bool
-	jemallocConf string
-	reportOnly   bool
+	scales        []int
+	threads       []int
+	objects       []string
+	allocators    []string
+	flowMax       int
+	ovsDir        string
+	ovnDir        string
+	useSystem     bool
+	jemallocConf  string
+	reportOnly    bool
+	trimTimeoutMs int
+	runs          int
 }
 
 func parseConfig() *Config {
 	scalesFlag := flag.String("scales", "1,10,100,1000,10000", "Comma-separated scales to evaluate")
 	threadsFlag := flag.String("threads", "4", "Comma-separated thread counts to evaluate (e.g. 1,4,8)")
-	objectsFlag := flag.String("objects", "all", "Comma-separated objects: port,acl,address_set,port_group,load_balancer,flow,datapath,combined,all")
+	objectsFlag := flag.String("objects", "all", "Comma-separated objects: port,acl,address_set,port_group,load_balancer,flow,combined,all")
 	allocatorsFlag := flag.String("allocators", "glibc,jemalloc", "Comma-separated allocators: glibc,jemalloc")
 	flowMaxFlag := flag.Int("flow-max", 100000, "Max scale for OpenFlow rules")
 	ovsDirFlag := flag.String("ovs-dir", "", "Directory containing OVS binaries (or build/ovs-*)")
@@ -1567,15 +1570,22 @@ func parseConfig() *Config {
 	useSystemFlag := flag.Bool("use-system", false, "Force using system/container-installed packages and LD_PRELOAD")
 	jemallocConfFlag := flag.String("jemalloc-conf", defaultJemallocConf, "MALLOC_CONF string for jemalloc")
 	reportOnlyFlag := flag.Bool("report-only", false, "Regenerate markdown report from results/benchmark_data.json and exit")
+	trimTimeoutFlag := flag.Int("trim-timeout-ms", 1000, "Inactivity timeout in ms for OVN/OVS memory trimming (northd_trim_timeout, ovn-trim-timeout-ms; default 1000ms)")
+	runsFlag := flag.Int("runs", 1, "Number of benchmark iterations per scale (reports median across runs, e.g. -runs 3)")
 	flag.Parse()
 
 	cfg := &Config{
-		flowMax:      *flowMaxFlag,
-		ovsDir:       *ovsDirFlag,
-		ovnDir:       *ovnDirFlag,
-		useSystem:    *useSystemFlag,
-		jemallocConf: *jemallocConfFlag,
-		reportOnly:   *reportOnlyFlag,
+		flowMax:       *flowMaxFlag,
+		ovsDir:        *ovsDirFlag,
+		ovnDir:        *ovnDirFlag,
+		useSystem:     *useSystemFlag,
+		jemallocConf:  *jemallocConfFlag,
+		reportOnly:    *reportOnlyFlag,
+		trimTimeoutMs: *trimTimeoutFlag,
+		runs:          *runsFlag,
+	}
+	if cfg.runs < 1 {
+		cfg.runs = 1
 	}
 
 	for _, s := range strings.Split(*scalesFlag, ",") {
@@ -1593,7 +1603,7 @@ func parseConfig() *Config {
 	}
 
 	if *objectsFlag == "all" {
-		cfg.objects = []string{"port", "acl", "address_set", "port_group", "load_balancer", "flow", "datapath", "combined"}
+		cfg.objects = []string{"port", "acl", "address_set", "port_group", "load_balancer", "flow", "combined"}
 	} else {
 		for _, o := range strings.Split(*objectsFlag, ",") {
 			cfg.objects = append(cfg.objects, strings.TrimSpace(o))
@@ -1678,6 +1688,8 @@ func dispatchOVNBench(env *OVNEnvironment, obj string, n int) BenchResult {
 		return benchPortGroup(env, n)
 	case "load_balancer":
 		return benchLoadBalancer(env, n)
+	case "flow":
+		return benchFlow(env, n)
 	case "combined":
 		return benchCombined(env, n)
 	default:
@@ -1688,16 +1700,9 @@ func dispatchOVNBench(env *OVNEnvironment, obj string, n int) BenchResult {
 func runSingleBenchmark(obj, alloc string, n int, cfg *Config) (BenchResult, error) {
 	ovsDir, ovnDir := resolveBuildDirs(alloc, cfg)
 
-	if obj == "flow" {
-		return benchFlow(alloc, ovsDir, cfg.jemallocConf, n), nil
-	}
-	if obj == "datapath" {
-		return benchDatapath(alloc, ovsDir, cfg.jemallocConf, n), nil
-	}
-
 	primaryT := cfg.threads[0]
-	testDir := fmt.Sprintf("/tmp/opencode/bench_%s_%s_%d", alloc, obj, n)
-	env, err := NewOVNEnvironment(alloc, cfg.jemallocConf, ovsDir, ovnDir, testDir, primaryT)
+	testDir := filepath.Join(os.TempDir(), fmt.Sprintf("ovn_bench_%s_%s_%d_%d", alloc, obj, n, os.Getpid()))
+	env, err := NewOVNEnvironment(alloc, cfg.jemallocConf, ovsDir, ovnDir, testDir, primaryT, cfg.trimTimeoutMs)
 	if err != nil {
 		return BenchResult{}, err
 	}
@@ -1720,8 +1725,8 @@ func runSingleBenchmark(obj, alloc string, n int, cfg *Config) (BenchResult, err
 				r.ThreadLflows[tKey] = r.AddLflowMs
 				continue
 			}
-			tDir := fmt.Sprintf("/tmp/opencode/bench_%s_%s_%d_t%d", alloc, obj, n, t)
-			envT, err := NewOVNEnvironment(alloc, cfg.jemallocConf, ovsDir, ovnDir, tDir, t)
+			tDir := filepath.Join(os.TempDir(), fmt.Sprintf("ovn_bench_%s_%s_%d_t%d_%d", alloc, obj, n, t, os.Getpid()))
+			envT, err := NewOVNEnvironment(alloc, cfg.jemallocConf, ovsDir, ovnDir, tDir, t, cfg.trimTimeoutMs)
 			if err == nil && envT.Start() == nil {
 				rt := dispatchOVNBench(envT, obj, n)
 				r.ThreadLoops[tKey] = rt.AddLoopMs
@@ -1736,7 +1741,7 @@ func runSingleBenchmark(obj, alloc string, n int, cfg *Config) (BenchResult, err
 func filterScales(obj string, cfg *Config) []int {
 	scales := make([]int, len(cfg.scales))
 	copy(scales, cfg.scales)
-	if (obj == "flow" || obj == "datapath") && cfg.flowMax > 0 {
+	if obj == "flow" && cfg.flowMax > 0 {
 		hasMax := false
 		for _, s := range scales {
 			if s == cfg.flowMax {
@@ -1779,6 +1784,91 @@ func saveBenchmarkResults(results map[string]map[string]map[string]BenchResult, 
 	fmt.Println("Saved results/BENCHMARK_REPORT.md")
 }
 
+func computeMedianResult(results []BenchResult) BenchResult {
+	if len(results) == 0 {
+		return BenchResult{}
+	}
+	if len(results) == 1 {
+		return results[0]
+	}
+
+	n := len(results)
+	mid := n / 2
+
+	getMedianFloat := func(vals []float64) float64 {
+		sort.Float64s(vals)
+		if n%2 == 1 {
+			return vals[mid]
+		}
+		return (vals[mid-1] + vals[mid]) / 2.0
+	}
+
+	baselineList := make([]float64, n)
+	addSecList := make([]float64, n)
+	addRateList := make([]float64, n)
+	addLoopList := make([]float64, n)
+	addLflowList := make([]float64, n)
+	peakList := make([]float64, n)
+	delSecList := make([]float64, n)
+	delLoopList := make([]float64, n)
+	postDelList := make([]float64, n)
+	retainedList := make([]float64, n)
+
+	for i, r := range results {
+		baselineList[i] = r.BaselineRSS
+		addSecList[i] = r.AddSec
+		addRateList[i] = r.AddRate
+		addLoopList[i] = r.AddLoopMs
+		addLflowList[i] = r.AddLflowMs
+		peakList[i] = r.PeakRSS
+		delSecList[i] = r.DelSec
+		delLoopList[i] = r.DelLoopMs
+		postDelList[i] = r.PostDelRSS
+		retainedList[i] = r.RetainedRSS
+	}
+
+	med := BenchResult{
+		BaselineRSS: round2(getMedianFloat(baselineList)),
+		AddSec:      round3(getMedianFloat(addSecList)),
+		AddRate:     round1(getMedianFloat(addRateList)),
+		AddLoopMs:   round1(getMedianFloat(addLoopList)),
+		AddLflowMs:  round1(getMedianFloat(addLflowList)),
+		PeakRSS:     round2(getMedianFloat(peakList)),
+		DelSec:      round3(getMedianFloat(delSecList)),
+		DelLoopMs:   round1(getMedianFloat(delLoopList)),
+		PostDelRSS:  round2(getMedianFloat(postDelList)),
+		RetainedRSS: round2(getMedianFloat(retainedList)),
+		Components:  make(map[string]ComponentMem),
+	}
+
+	if len(results[0].Components) > 0 {
+		for cName := range results[0].Components {
+			cBase := make([]float64, n)
+			cPeak := make([]float64, n)
+			cPost := make([]float64, n)
+			cRet := make([]float64, n)
+			for i, r := range results {
+				cBase[i] = r.Components[cName].BaselineRSS
+				cPeak[i] = r.Components[cName].PeakRSS
+				cPost[i] = r.Components[cName].PostDelRSS
+				cRet[i] = r.Components[cName].RetainedRSS
+			}
+			med.Components[cName] = ComponentMem{
+				BaselineRSS: round2(getMedianFloat(cBase)),
+				PeakRSS:     round2(getMedianFloat(cPeak)),
+				PostDelRSS:  round2(getMedianFloat(cPost)),
+				RetainedRSS: round2(getMedianFloat(cRet)),
+			}
+		}
+	}
+
+	if len(results[mid].ThreadLoops) > 0 {
+		med.ThreadLoops = results[mid].ThreadLoops
+		med.ThreadLflows = results[mid].ThreadLflows
+	}
+	return med
+}
+
 // ---------------------------------------------------------------------------
 // Main Orchestration
 // ---------------------------------------------------------------------------
@@ -1789,7 +1879,7 @@ func main() {
 
 	fmt.Printf("System: %s | %s cores | %s RAM\n", sysInfo["cpu_model"], sysInfo["cpu_cores"], sysInfo["total_ram"])
 	fmt.Printf("Testing Objects (via native libovsdb): %v\n", cfg.objects)
-	fmt.Printf("Scales: %v | Threads: %v\n\n", cfg.scales, cfg.threads)
+	fmt.Printf("Scales: %v | Threads: %v | Runs per scale: %d\n\n", cfg.scales, cfg.threads, cfg.runs)
 
 	results := loadStoredResults()
 
@@ -1812,15 +1902,28 @@ func main() {
 			fmt.Printf("  Scale N = %d...\n", n)
 
 			for _, alloc := range cfg.allocators {
-				r, err := runSingleBenchmark(obj, alloc, n, cfg)
-				if err != nil {
-					fmt.Printf("    [%s] Benchmark error: %v\n", alloc, err)
+				var runs []BenchResult
+				for runIdx := 0; runIdx < cfg.runs; runIdx++ {
+					r, err := runSingleBenchmark(obj, alloc, n, cfg)
+					if err != nil {
+						fmt.Printf("    [%s] Benchmark error on run %d: %v\n", alloc, runIdx+1, err)
+						break
+					}
+					runs = append(runs, r)
+				}
+				if len(runs) == 0 {
 					continue
 				}
+				r := computeMedianResult(runs)
 
 				results[obj][nStr][alloc] = r
-				fmt.Printf("    [%s] Add: %.3fs (%.1f ops/s) | Loop: %.1fms | Peak RSS: %.2fMB | Retained: %+.2fMB\n",
-					alloc, r.AddSec, r.AddRate, r.AddLoopMs, r.PeakRSS, r.RetainedRSS)
+				if cfg.runs > 1 {
+					fmt.Printf("    [%s] (median of %d runs) Add: %.3fs (%.1f ops/s) | Loop: %.1fms | Peak RSS: %.2fMB | Retained: %+.2fMB\n",
+						alloc, len(runs), r.AddSec, r.AddRate, r.AddLoopMs, r.PeakRSS, r.RetainedRSS)
+				} else {
+					fmt.Printf("    [%s] Add: %.3fs (%.1f ops/s) | Loop: %.1fms | Peak RSS: %.2fMB | Retained: %+.2fMB\n",
+						alloc, r.AddSec, r.AddRate, r.AddLoopMs, r.PeakRSS, r.RetainedRSS)
+				}
 			}
 		}
 	}

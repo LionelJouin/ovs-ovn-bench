@@ -19,6 +19,10 @@ on:
         description: "Objects to benchmark (port,acl,address_set,port_group,load_balancer,flow,combined,all)"
         required: false
         default: "all"
+      runs:
+        description: "Number of iterations per scale (for statistical median)"
+        required: false
+        default: "3"
 
 env:
   REGISTRY: ghcr.io
@@ -124,4 +128,61 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
+          path: results/
+
+  run-benchmark-multi:
+    name: Run Benchmark (Multi-Iteration)
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Determine image to use
+        id: img
+        run: |
+          REPO_LC=$(echo "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "Building image locally for PR testing..."
+            docker build -t ovs-ovn-bench:local .
+            echo "image=ovs-ovn-bench:local" >> "$GITHUB_OUTPUT"
+          else
+            echo "image=${REPO_LC}:latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run multi-iteration benchmark in container
+        run: |
+          mkdir -p results
+          SCALES="${{ inputs.scales || '1,10,100,1000' }}"
+          THREADS="${{ inputs.threads || '4' }}"
+          OBJECTS="${{ inputs.objects || 'all' }}"
+          RUNS="${{ inputs.runs || '3' }}"
+          
+          echo "Running multi-iteration benchmark with scales=$SCALES, threads=$THREADS, objects=$OBJECTS, runs=$RUNS"
+          docker run --rm \
+            -v "$(pwd)/results:/workspace/results" \
+            "${{ steps.img.outputs.image }}" \
+            -scales "$SCALES" \
+            -threads "$THREADS" \
+            -objects "$OBJECTS" \
+            -runs "$RUNS"
+
+      - name: Publish Summary to Job
+        if: always()
+        run: |
+          if [ -f results/BENCHMARK_REPORT.md ]; then
+            cat results/BENCHMARK_REPORT.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload Benchmark Results Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-multi-run
           path: results/
