@@ -10,7 +10,7 @@ on:
       scales:
         description: "Comma-separated scales to evaluate"
         required: false
-        default: "1,10,100,1000"
+        default: "1,10,100,1000,10000"
       threads:
         description: "Thread counts to evaluate (e.g. 1,4,8)"
         required: false
@@ -107,7 +107,7 @@ jobs:
       - name: Run benchmark in container
         run: |
           mkdir -p results
-          SCALES="${{ inputs.scales || '1,10,100,1000' }}"
+          SCALES="${{ inputs.scales || '1,10,100,1000,10000' }}"
           THREADS="${{ inputs.threads || '4' }}"
           OBJECTS="${{ inputs.objects || 'all' }}"
           
@@ -165,7 +165,7 @@ jobs:
       - name: Run multi-iteration benchmark in container
         run: |
           mkdir -p results
-          SCALES="${{ inputs.scales || '1,10,100,1000' }}"
+          SCALES="${{ inputs.scales || '1,10,100,1000,10000' }}"
           THREADS="${{ inputs.threads || '4' }}"
           OBJECTS="${{ inputs.objects || 'all' }}"
           RUNS="${{ inputs.runs || '3' }}"

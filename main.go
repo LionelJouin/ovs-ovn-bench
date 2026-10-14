@@ -2051,6 +2051,7 @@ type Config struct {
 	useSystem     bool
 	jemallocConf  string
 	reportOnly    bool
+	merge         bool
 	trimTimeoutMs int
 	runs          int
 }
@@ -2066,6 +2067,7 @@ func parseConfig() *Config {
 	useSystemFlag := flag.Bool("use-system", false, "Force using system/container-installed packages and LD_PRELOAD")
 	jemallocConfFlag := flag.String("jemalloc-conf", defaultJemallocConf, "MALLOC_CONF string for jemalloc")
 	reportOnlyFlag := flag.Bool("report-only", false, "Regenerate markdown report from results/benchmark_data.json and exit")
+	mergeFlag := flag.Bool("merge", false, "Merge results with existing results/benchmark_data.json instead of starting fresh")
 	trimTimeoutFlag := flag.Int("trim-timeout-ms", 1000, "Inactivity timeout in ms for OVN/OVS memory trimming (northd_trim_timeout, ovn-trim-timeout-ms; default 1000ms)")
 	runsFlag := flag.Int("runs", 1, "Number of benchmark iterations per scale (reports median across runs, e.g. -runs 3)")
 	flag.Parse()
@@ -2077,6 +2079,7 @@ func parseConfig() *Config {
 		useSystem:     *useSystemFlag,
 		jemallocConf:  *jemallocConfFlag,
 		reportOnly:    *reportOnlyFlag,
+		merge:         *mergeFlag,
 		trimTimeoutMs: *trimTimeoutFlag,
 		runs:          *runsFlag,
 	}
@@ -2411,7 +2414,10 @@ func main() {
 	fmt.Printf("Testing Objects (via native libovsdb): %v\n", cfg.objects)
 	fmt.Printf("Scales: %v | Threads: %v | Runs per scale: %d\n\n", cfg.scales, cfg.threads, cfg.runs)
 
-	results := loadStoredResults()
+	results := make(map[string]map[string]map[string]BenchResult)
+	if cfg.reportOnly || cfg.merge {
+		results = loadStoredResults()
+	}
 
 	if cfg.reportOnly {
 		saveBenchmarkResults(results, sysInfo)
