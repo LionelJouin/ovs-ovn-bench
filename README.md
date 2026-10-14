@@ -35,6 +35,7 @@ For every workload and scale $N$, measurements follow a 3-phase lifecycle across
 | **`port_group`** | Logical port groupings matching ACLs |
 | **`load_balancer`** | VIPs mapped to backend endpoints |
 | **`flow`** | OpenFlow rules across tables in `ovs-vswitchd` |
+| **`datapath`** | OVS userspace datapath packet forwarding and megaflow cache scaling |
 | **`combined`** | Scaled combination of Routers, Switches, Ports, LBs, and ACLs |
 
 ---

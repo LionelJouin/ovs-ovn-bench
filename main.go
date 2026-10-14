@@ -1437,6 +1437,74 @@ func benchFlow(env *OVNEnvironment, n int) BenchResult {
 	return buildBenchResult(baseline, peak, postDel, addSec, addRate, 0, 0, delSec, 0)
 }
 
+func benchDatapath(env *OVNEnvironment, n int) BenchResult {
+	sw, err := setupBaselineSwitch(env, "bench-dp-ls", 2)
+	if err != nil {
+		fmt.Printf("setupBaselineSwitch error: %v\n", err)
+	}
+	_ = sw
+	env.Sync()
+
+	envVars := os.Environ()
+	envVars = append(envVars, "OVS_RUNDIR="+env.testDir, "OVS_LOGDIR="+env.testDir)
+
+	// Ensure datapath flow limit and idle time accommodate high-scale tests without premature eviction
+	_ = exec.Command(env.ovsVsctl, "--db="+env.ovsSock, "--no-wait", "set", "Open_vSwitch", ".",
+		"other_config:max-idle=60000", "other_config:flow-limit=200000").Run()
+
+	// Single high-priority forwarding rule that rewrites IP_SRC from IP_DST.
+	// This forces ofproto-dpif-xlate to un-wildcard the destination IP in the datapath
+	// megaflow cache without polluting ovs-vswitchd with N OpenFlow rules.
+	cmdOf := exec.Command(env.ovsOfctl, "add-flow", "br-int",
+		"cookie=0x4450,table=0,priority=65500,in_port=vif-0,udp,actions=move:NXM_OF_IP_DST[]->NXM_OF_IP_SRC[],output:vif-1")
+	cmdOf.Env = envVars
+	if out, err := cmdOf.CombinedOutput(); err != nil {
+		fmt.Printf("  [ovs-ofctl error] add-flow failed: %s (%v)\n", string(out), err)
+	}
+
+	baseline := env.sampleMemory()
+
+	// Phase 2: Inject N packets across distinct 5-tuples into vif-0 via netdev-dummy/receive.
+	// Each unique destination IP (10.b1.b2.b3) triggers an upcall and compiles a distinct
+	// megaflow entry in dpif-netdev, testing datapath flow cache memory scaling.
+	t0 := time.Now()
+	chunkSize := 500
+	ctl := filepath.Join(env.testDir, "vswitchd.ctl")
+	for i := 0; i < n; i += chunkSize {
+		end := i + chunkSize
+		if end > n {
+			end = n
+		}
+		args := []string{"-t", ctl, "netdev-dummy/receive", "vif-0"}
+		for j := i; j < end; j++ {
+			b1 := byte(((j + 2) >> 16) & 255)
+			b2 := byte(((j + 2) >> 8) & 255)
+			b3 := byte((j + 2) & 255)
+			pkt := fmt.Sprintf("50540000000250540000000108004500002400010000401100000a0000010a%02x%02x%02x12340050001000000000000000000000", b1, b2, b3)
+			args = append(args, pkt)
+		}
+		_ = exec.Command(env.ovnAppctl, args...).Run()
+	}
+	fwdSec := float64(time.Since(t0).Microseconds()) / 1e6
+	peak := env.sampleMemory()
+
+	// Phase 3: Synchronously flush datapath flows and purge revalidator ukeys
+	t1 := time.Now()
+	_ = exec.Command(env.ovnAppctl, "-t", ctl, "dpctl/del-flows").Run()
+	_ = exec.Command(env.ovnAppctl, "-t", ctl, "revalidator/purge").Run()
+	cmdDel := exec.Command(env.ovsOfctl, "del-flows", "br-int", "cookie=0x4450/-1")
+	cmdDel.Env = envVars
+	_ = cmdDel.Run()
+	delSec := float64(time.Since(t1).Microseconds()) / 1e6
+
+	env.TrimMemory()
+	time.Sleep(env.decayWaitTime())
+	postDel := env.sampleMemory()
+
+	fwdRate := float64(n) / math.Max(fwdSec, 0.001)
+	return buildBenchResult(baseline, peak, postDel, fwdSec, fwdRate, 0, 0, delSec, 0)
+}
+
 func benchCombined(env *OVNEnvironment, n int) BenchResult {
 	ctx := context.Background()
 	env.Recompute()
@@ -1781,10 +1849,11 @@ func generateReport(results map[string]map[string]map[string]BenchResult, sysInf
 		"port_group":    "Port Group (Ports member grouping matching ACL)",
 		"load_balancer": "Load Balancer (VIPs mapped to endpoints)",
 		"flow":          "OpenFlow Flows (OVS Control Plane)",
+		"datapath":      "OVS Datapath Packet Forwarding & Megaflow Cache",
 		"combined":      "Combined Workload (All objects scaled proportionally)",
 	}
 
-	for _, obj := range []string{"port", "acl", "address_set", "port_group", "load_balancer", "flow", "combined"} {
+	for _, obj := range []string{"port", "acl", "address_set", "port_group", "load_balancer", "flow", "datapath", "combined"} {
 		scalesData, exists := results[obj]
 		if !exists {
 			continue
@@ -1837,6 +1906,11 @@ func generateReport(results map[string]map[string]map[string]BenchResult, sysInf
 			if obj == "address_set" {
 				addUnit = "addrs/s"
 				rateLabel = "Address Insertion Rate"
+			} else if obj == "datapath" {
+				addUnit = "pkts/s"
+				addLabel = "Forwarding Duration"
+				rateLabel = "Forwarding Rate"
+				delLabel = "Datapath Flush Duration"
 			}
 
 			lines = append(lines, fmt.Sprintf("| **%d** | Total Pod Baseline Heap (RssAnon) | %.2f MiB | %.2f MiB | %s |",
@@ -1846,7 +1920,7 @@ func generateReport(results map[string]map[string]map[string]BenchResult, sysInf
 			lines = append(lines, fmt.Sprintf("| | %s | %s %s | %s %s | %s |",
 				rateLabel, formatNum(g.AddRate), addUnit, formatNum(j.AddRate), addUnit, calcPct(g.AddRate, j.AddRate, "rate")))
 
-			if obj != "flow" {
+			if obj != "flow" && obj != "datapath" {
 				if len(g.ThreadLoops) > 0 {
 					for tKey, gVal := range g.ThreadLoops {
 						jVal := j.ThreadLoops[tKey]
@@ -1866,7 +1940,7 @@ func generateReport(results map[string]map[string]map[string]BenchResult, sysInf
 			lines = append(lines, fmt.Sprintf("| | %s | %.3f s | %.3f s | %s |",
 				delLabel, g.DelSec, j.DelSec, calcPct(g.DelSec, j.DelSec, "s")))
 
-			if obj != "flow" {
+			if obj != "flow" && obj != "datapath" {
 				lines = append(lines, fmt.Sprintf("| | Post-Delete Recompute | %.1f ms | %.1f ms | %s |",
 					g.DelLoopMs, j.DelLoopMs, calcPct(g.DelLoopMs, j.DelLoopMs, "ms")))
 			}
@@ -1928,12 +2002,16 @@ func generateReport(results map[string]map[string]map[string]BenchResult, sysInf
 			}
 
 			lines = append(lines, "### Visual Charts", "")
-			if obj != "flow" {
+			if obj != "flow" && obj != "datapath" {
 				chartTitle := fmt.Sprintf("%s - Recompute Latency", title)
 				lines = append(lines, generateMermaidChart(chartTitle, "northd-loop (ms)", cats, gLoop, jLoop, "line"))
 			} else {
-				chartTitle := fmt.Sprintf("%s - Insertion Rate", title)
-				lines = append(lines, generateMermaidChart(chartTitle, "ops/s", cats, gRate, jRate, "line"))
+				chartUnit := "ops/s"
+				if obj == "datapath" {
+					chartUnit = "pkts/s"
+				}
+				chartTitle := fmt.Sprintf("%s - Throughput", title)
+				lines = append(lines, generateMermaidChart(chartTitle, chartUnit, cats, gRate, jRate, "line"))
 			}
 
 			chartPeakTitle := fmt.Sprintf("%s - Peak Memory", title)
@@ -1980,7 +2058,7 @@ type Config struct {
 func parseConfig() *Config {
 	scalesFlag := flag.String("scales", "1,10,100,1000,10000", "Comma-separated scales to evaluate")
 	threadsFlag := flag.String("threads", "4", "Comma-separated thread counts to evaluate (e.g. 1,4,8)")
-	objectsFlag := flag.String("objects", "all", "Comma-separated objects: port,acl,address_set,port_group,load_balancer,flow,combined,all")
+	objectsFlag := flag.String("objects", "all", "Comma-separated objects: port,acl,address_set,port_group,load_balancer,flow,datapath,combined,all")
 	allocatorsFlag := flag.String("allocators", "glibc,jemalloc", "Comma-separated allocators: glibc,jemalloc")
 	flowMaxFlag := flag.Int("flow-max", 100000, "Max scale for OpenFlow rules")
 	ovsDirFlag := flag.String("ovs-dir", "", "Directory containing OVS binaries (or build/ovs-*)")
@@ -2021,7 +2099,7 @@ func parseConfig() *Config {
 	}
 
 	if *objectsFlag == "all" {
-		cfg.objects = []string{"port", "acl", "address_set", "port_group", "load_balancer", "flow", "combined"}
+		cfg.objects = []string{"port", "acl", "address_set", "port_group", "load_balancer", "flow", "datapath", "combined"}
 	} else {
 		for _, o := range strings.Split(*objectsFlag, ",") {
 			cfg.objects = append(cfg.objects, strings.TrimSpace(o))
@@ -2115,6 +2193,8 @@ func dispatchOVNBench(env *OVNEnvironment, obj string, n int) BenchResult {
 		return benchLoadBalancer(env, n)
 	case "flow":
 		return benchFlow(env, n)
+	case "datapath":
+		return benchDatapath(env, n)
 	case "combined":
 		return benchCombined(env, n)
 	default:
@@ -2166,7 +2246,7 @@ func runSingleBenchmark(obj, alloc string, n int, cfg *Config) (BenchResult, err
 func filterScales(obj string, cfg *Config) []int {
 	scales := make([]int, len(cfg.scales))
 	copy(scales, cfg.scales)
-	if obj == "flow" && cfg.flowMax > 0 {
+	if (obj == "flow" || obj == "datapath") && cfg.flowMax > 0 {
 		hasMax := false
 		for _, s := range scales {
 			if s == cfg.flowMax {

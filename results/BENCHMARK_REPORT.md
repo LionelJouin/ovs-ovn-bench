@@ -1,11 +1,11 @@
 # OVS & OVN Scaling Benchmark: glibc malloc vs jemalloc
 
-**Date:** 2026-10-14 12:01:54
+**Date:** 2026-10-14 10:55:03
 **System:** Linux
 **CPU:** Intel(R) Core(TM) Ultra 7 165H (22 vCPUs)
 **Memory:** 62Gi
-**Glibc Version:** ldd (GNU libc) 2.43
-**Jemalloc Version:** 5.3.0
+**Glibc Version:** ldd (Ubuntu GLIBC 2.43-2ubuntu2.4) 2.43
+**Jemalloc Version:** 5.3.0-4
 
 ---
 
@@ -737,7 +737,7 @@ config:
             plotColorPalette: "#1f77b4, #ff7f0e"
 ---
 xychart-beta
-    title "OpenFlow Flows (OVS Control Plane) - Insertion Rate"
+    title "OpenFlow Flows (OVS Control Plane) - Throughput"
     x-axis ["1", "10", "100", "1k", "10k", "100k"]
     y-axis "ops/s" 0 --> 41127
     line "glibc malloc" [205.1, 1943.3, 12946.7, 32387.6, 35049.7, 34141.3]
@@ -758,6 +758,129 @@ xychart-beta
     y-axis "Peak RSS (MiB)" 0 --> 123
     line "glibc malloc" [27.5, 27.5, 27.6, 28.1, 35.0, 106.1]
     line "jemalloc" [31.6, 31.6, 31.7, 32.1, 38.8, 102.9]
+```
+
+
+## OVS Datapath Packet Forwarding & Megaflow Cache
+
+| Scale (N) | Phase / Metric | glibc malloc | jemalloc | Relative Difference |
+|---|---|---|---|---|
+| **1** | Total Pod Baseline Heap (RssAnon) | 28.97 MiB | 32.99 MiB | +13.9% |
+| | Forwarding Duration | 0.002 s | 0.003 s | +50.0% |
+| | Forwarding Rate | 496 pkts/s | 377 pkts/s | -24.0% |
+| | Total Pod Peak Heap (RssAnon) | 28.97 MiB | 33.06 MiB | +14.1% |
+| | Datapath Flush Duration | 0.008 s | 0.008 s | ~Parity (±1%) |
+| | Total Pod Post-Delete Heap (RssAnon) | 28.53 MiB | 33.06 MiB | +15.9% |
+| | **Total Pod Retained Heap** | **-0.44 MiB** | **+0.07 MiB** | **+0.51 MiB** |
+| | ├─ `ovn-northd` (Peak / Retained Heap) | 5.97 / -0.03 MiB | 6.92 / +0.00 MiB | +15.9% / +0.03 MiB |
+| | ├─ `ovn-controller` (Peak / Retained Heap) | 3.99 / -0.06 MiB | 4.82 / +0.00 MiB | +20.8% / +0.06 MiB |
+| | ├─ `ovs-vswitchd` (Peak / Retained Heap) | 12.23 / +0.00 MiB | 13.73 / -0.01 MiB | +12.3% / -0.01 MiB |
+| | ├─ `ovsdb-server (SB)` (Peak / Retained Heap) | 2.65 / -0.13 MiB | 2.81 / +0.01 MiB | +6.0% / +0.14 MiB |
+| | ├─ `ovsdb-server (NB)` (Peak / Retained Heap) | 2.09 / -0.13 MiB | 2.37 / +0.01 MiB | +13.4% / +0.14 MiB |
+| | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.04 / -0.09 MiB | 2.42 / +0.06 MiB | +18.6% / +0.15 MiB |
+|---|---|---|---|---|
+| **10** | Total Pod Baseline Heap (RssAnon) | 28.96 MiB | 33.04 MiB | +14.1% |
+| | Forwarding Duration | 0.002 s | 0.002 s | ~Parity (±1%) |
+| | Forwarding Rate | 4,417 pkts/s | 4,800 pkts/s | +8.7% |
+| | Total Pod Peak Heap (RssAnon) | 28.96 MiB | 33.16 MiB | +14.5% |
+| | Datapath Flush Duration | 0.008 s | 0.007 s | -12.5% |
+| | Total Pod Post-Delete Heap (RssAnon) | 28.55 MiB | 33.16 MiB | +16.1% |
+| | **Total Pod Retained Heap** | **-0.41 MiB** | **+0.12 MiB** | **+0.53 MiB** |
+| | ├─ `ovn-northd` (Peak / Retained Heap) | 5.97 / -0.02 MiB | 6.95 / +0.00 MiB | +16.4% / +0.02 MiB |
+| | ├─ `ovn-controller` (Peak / Retained Heap) | 3.99 / -0.06 MiB | 4.82 / +0.01 MiB | +20.8% / +0.07 MiB |
+| | ├─ `ovs-vswitchd` (Peak / Retained Heap) | 12.24 / +0.01 MiB | 13.77 / +0.02 MiB | +12.5% / +0.01 MiB |
+| | ├─ `ovsdb-server (SB)` (Peak / Retained Heap) | 2.65 / -0.13 MiB | 2.82 / +0.01 MiB | +6.4% / +0.14 MiB |
+| | ├─ `ovsdb-server (NB)` (Peak / Retained Heap) | 2.09 / -0.13 MiB | 2.38 / +0.01 MiB | +13.9% / +0.14 MiB |
+| | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.03 / -0.08 MiB | 2.43 / +0.07 MiB | +19.7% / +0.15 MiB |
+|---|---|---|---|---|
+| **100** | Total Pod Baseline Heap (RssAnon) | 28.95 MiB | 33.04 MiB | +14.1% |
+| | Forwarding Duration | 0.002 s | 0.002 s | ~Parity (±1%) |
+| | Forwarding Rate | 46,168 pkts/s | 49,505 pkts/s | +7.2% |
+| | Total Pod Peak Heap (RssAnon) | 28.95 MiB | 33.55 MiB | +15.9% |
+| | Datapath Flush Duration | 0.007 s | 0.009 s | +28.6% |
+| | Total Pod Post-Delete Heap (RssAnon) | 28.80 MiB | 33.55 MiB | +16.5% |
+| | **Total Pod Retained Heap** | **-0.15 MiB** | **+0.51 MiB** | **+0.66 MiB** |
+| | ├─ `ovn-northd` (Peak / Retained Heap) | 5.98 / -0.03 MiB | 6.96 / +0.00 MiB | +16.4% / +0.03 MiB |
+| | ├─ `ovn-controller` (Peak / Retained Heap) | 3.99 / -0.06 MiB | 4.83 / +0.01 MiB | +21.1% / +0.07 MiB |
+| | ├─ `ovs-vswitchd` (Peak / Retained Heap) | 12.49 / +0.26 MiB | 14.14 / +0.41 MiB | +13.2% / +0.15 MiB |
+| | ├─ `ovsdb-server (SB)` (Peak / Retained Heap) | 2.65 / -0.13 MiB | 2.82 / +0.01 MiB | +6.4% / +0.14 MiB |
+| | ├─ `ovsdb-server (NB)` (Peak / Retained Heap) | 2.06 / -0.10 MiB | 2.38 / +0.02 MiB | +15.5% / +0.12 MiB |
+| | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.04 / -0.09 MiB | 2.42 / +0.06 MiB | +18.6% / +0.15 MiB |
+|---|---|---|---|---|
+| **1000** | Total Pod Baseline Heap (RssAnon) | 29.41 MiB | 33.08 MiB | +12.5% |
+| | Forwarding Duration | 0.005 s | 0.007 s | +40.0% |
+| | Forwarding Rate | 181,884 pkts/s | 149,790 pkts/s | -17.6% |
+| | Total Pod Peak Heap (RssAnon) | 29.78 MiB | 33.72 MiB | +13.2% |
+| | Datapath Flush Duration | 0.008 s | 0.009 s | +12.5% |
+| | Total Pod Post-Delete Heap (RssAnon) | 29.11 MiB | 33.72 MiB | +15.8% |
+| | **Total Pod Retained Heap** | **-0.30 MiB** | **+0.64 MiB** | **+0.94 MiB** |
+| | ├─ `ovn-northd` (Peak / Retained Heap) | 5.98 / -0.03 MiB | 6.96 / +0.00 MiB | +16.4% / +0.03 MiB |
+| | ├─ `ovn-controller` (Peak / Retained Heap) | 4.42 / -0.49 MiB | 4.86 / +0.02 MiB | +10.0% / +0.51 MiB |
+| | ├─ `ovs-vswitchd` (Peak / Retained Heap) | 12.81 / +0.58 MiB | 14.24 / +0.52 MiB | +11.2% / -0.06 MiB |
+| | ├─ `ovsdb-server (SB)` (Peak / Retained Heap) | 2.65 / -0.13 MiB | 2.85 / +0.01 MiB | +7.5% / +0.14 MiB |
+| | ├─ `ovsdb-server (NB)` (Peak / Retained Heap) | 2.10 / -0.15 MiB | 2.38 / +0.02 MiB | +13.3% / +0.17 MiB |
+| | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.03 / -0.08 MiB | 2.43 / +0.07 MiB | +19.7% / +0.15 MiB |
+|---|---|---|---|---|
+| **10000** | Total Pod Baseline Heap (RssAnon) | 28.97 MiB | 33.05 MiB | +14.1% |
+| | Forwarding Duration | 0.069 s | 0.068 s | -1.4% |
+| | Forwarding Rate | 145,501 pkts/s | 146,230 pkts/s | ~Parity (±1%) |
+| | Total Pod Peak Heap (RssAnon) | 35.07 MiB | 39.00 MiB | +11.2% |
+| | Datapath Flush Duration | 0.010 s | 0.008 s | -20.0% |
+| | Total Pod Post-Delete Heap (RssAnon) | 34.86 MiB | 34.77 MiB | ~Parity (±1%) |
+| | **Total Pod Retained Heap** | **+5.89 MiB** | **+1.72 MiB** | **-4.17 MiB** |
+| | ├─ `ovn-northd` (Peak / Retained Heap) | 5.97 / -0.03 MiB | 6.93 / +0.00 MiB | +16.1% / +0.03 MiB |
+| | ├─ `ovn-controller` (Peak / Retained Heap) | 3.99 / -0.06 MiB | 4.82 / +0.00 MiB | +20.8% / +0.06 MiB |
+| | ├─ `ovs-vswitchd` (Peak / Retained Heap) | 18.56 / +6.33 MiB | 19.69 / +1.63 MiB | +6.1% / -4.70 MiB |
+| | ├─ `ovsdb-server (SB)` (Peak / Retained Heap) | 2.64 / -0.12 MiB | 2.84 / +0.01 MiB | +7.6% / +0.13 MiB |
+| | ├─ `ovsdb-server (NB)` (Peak / Retained Heap) | 2.10 / -0.14 MiB | 2.38 / +0.02 MiB | +13.3% / +0.16 MiB |
+| | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.04 / -0.09 MiB | 2.43 / +0.06 MiB | +19.1% / +0.15 MiB |
+|---|---|---|---|---|
+| **100000** | Total Pod Baseline Heap (RssAnon) | 28.97 MiB | 33.02 MiB | +14.0% |
+| | Forwarding Duration | 0.669 s | 0.682 s | +1.9% |
+| | Forwarding Rate | 149,545 pkts/s | 146,637 pkts/s | -1.9% |
+| | Total Pod Peak Heap (RssAnon) | 66.89 MiB | 70.99 MiB | +6.1% |
+| | Datapath Flush Duration | 0.016 s | 0.017 s | +6.3% |
+| | Total Pod Post-Delete Heap (RssAnon) | 66.36 MiB | 37.96 MiB | -42.8% |
+| | **Total Pod Retained Heap** | **+37.39 MiB** | **+4.94 MiB** | **-32.45 MiB** |
+| | ├─ `ovn-northd` (Peak / Retained Heap) | 5.97 / -0.03 MiB | 6.94 / -0.02 MiB | +16.2% / +0.01 MiB |
+| | ├─ `ovn-controller` (Peak / Retained Heap) | 3.98 / -0.06 MiB | 4.81 / +0.00 MiB | +20.9% / +0.06 MiB |
+| | ├─ `ovs-vswitchd` (Peak / Retained Heap) | 50.15 / +37.84 MiB | 51.71 / +4.88 MiB | +3.1% / -32.96 MiB |
+| | ├─ `ovsdb-server (SB)` (Peak / Retained Heap) | 2.65 / -0.13 MiB | 2.81 / +0.00 MiB | +6.0% / +0.13 MiB |
+| | ├─ `ovsdb-server (NB)` (Peak / Retained Heap) | 2.10 / -0.14 MiB | 2.37 / +0.01 MiB | +12.9% / +0.15 MiB |
+| | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.04 / -0.09 MiB | 2.43 / +0.07 MiB | +19.1% / +0.16 MiB |
+|---|---|---|---|---|
+
+### Visual Charts
+
+```mermaid
+---
+config:
+    themeVariables:
+        xyChart:
+            plotColorPalette: "#1f77b4, #ff7f0e"
+---
+xychart-beta
+    title "OVS Datapath Packet Forwarding & Megaflow Cache - Throughput"
+    x-axis ["1", "10", "100", "1k", "10k", "100k"]
+    y-axis "pkts/s" 0 --> 209167
+    line "glibc malloc" [496.5, 4417.0, 46168.1, 181884.3, 145501.1, 149545.0]
+    line "jemalloc" [377.4, 4800.8, 49505.0, 149790.3, 146230.9, 146637.9]
+```
+
+
+```mermaid
+---
+config:
+    themeVariables:
+        xyChart:
+            plotColorPalette: "#1f77b4, #ff7f0e"
+---
+xychart-beta
+    title "OVS Datapath Packet Forwarding & Megaflow Cache - Peak Memory"
+    x-axis ["1", "10", "100", "1k", "10k", "100k"]
+    y-axis "Peak RSS (MiB)" 0 --> 82
+    line "glibc malloc" [29.0, 29.0, 28.9, 29.8, 35.1, 66.9]
+    line "jemalloc" [33.1, 33.2, 33.5, 33.7, 39.0, 71.0]
 ```
 
 

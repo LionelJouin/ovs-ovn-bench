@@ -16,7 +16,7 @@ on:
         required: false
         default: "4"
       objects:
-        description: "Objects to benchmark (port,acl,address_set,port_group,load_balancer,flow,combined,all)"
+        description: "Objects to benchmark (port,acl,address_set,port_group,load_balancer,flow,datapath,combined,all)"
         required: false
         default: "all"
       runs:
