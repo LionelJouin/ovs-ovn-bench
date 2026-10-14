@@ -1,6 +1,6 @@
 module ovs-ovn-bench
 
-go 1.22.0
+go 1.27.0
 
 require github.com/ovn-kubernetes/libovsdb v0.8.1
 

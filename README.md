@@ -17,7 +17,7 @@ For every workload and scale $N$, measurements follow a 3-phase lifecycle across
 2. **Phase 2: After Add ($N$)**:
    - **Duration & Rate**: Time to commit $N$ objects and throughput (ops/sec).
    - **Recompute Latency**: Full engine recompute measured via stopwatches (`ovn-northd-loop`, `lflow`) across thread counts (`-threads 1,4,8`).
-   - **Peak Memory**: High water mark resident memory (`VmHWM` in MiB) for the total pod and per-daemon breakdown.
+   - **Peak Memory**: High water mark private heap memory derived from the kernel's resident peak (`VmHWM - (VmRSS - RssAnon)` in MiB) for the total pod and per-daemon breakdown, isolating peak heap without shared library multi-counting.
 3. **Phase 3: After Remove ($N$)**:
    - **Deletion Duration**: Time to delete all $N$ objects and synchronize.
    - **Post-Deletion Recompute**: Execution time of cleanup engine iteration.

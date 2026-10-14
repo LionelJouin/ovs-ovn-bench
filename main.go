@@ -454,6 +454,17 @@ func verifyJemallocLoaded(pid int) error {
 	return nil
 }
 
+func verifyJemallocNotLoaded(pid int) error {
+	data, err := os.ReadFile(fmt.Sprintf("/proc/%d/maps", pid))
+	if err != nil {
+		return fmt.Errorf("failed to read /proc/%d/maps: %w", pid, err)
+	}
+	if strings.Contains(string(data), "jemalloc") {
+		return fmt.Errorf("process %d unexpectedly has libjemalloc loaded during glibc benchmark", pid)
+	}
+	return nil
+}
+
 func (e *OVNEnvironment) Start() error {
 	_ = os.RemoveAll(e.testDir)
 	if err := os.MkdirAll(e.testDir, 0755); err != nil {
@@ -540,7 +551,7 @@ func (e *OVNEnvironment) Start() error {
 			fmt.Sprintf("options:northd_trim_timeout=%d", e.trimTimeoutMs)).Run()
 		_ = exec.Command(e.ovsVsctl, "--db="+e.ovsSock, "--no-wait", "set", "Open_vSwitch", ".",
 			fmt.Sprintf("external_ids:ovn-trim-timeout-ms=%d", e.trimTimeoutMs),
-			"external_ids:ovn-trim-limit-lflow-cache=1000",
+			"external_ids:ovn-trim-limit-lflow-cache=1",
 			"external_ids:ovn-trim-wmark-perc-lflow-cache=50").Run()
 	}
 
@@ -611,9 +622,23 @@ func (e *OVNEnvironment) Start() error {
 		return errPid
 	}
 
-	if e.alloc == "jemalloc" {
-		if err := verifyJemallocLoaded(e.northdPid); err != nil {
-			return err
+	pids := map[string]int{
+		"ovn-northd":     e.northdPid,
+		"ovn-controller": e.controllerPid,
+		"ovs-vswitchd":   e.vswitchdPid,
+		"ovsdb-nb":       e.nbServerPid,
+		"ovsdb-sb":       e.sbServerPid,
+		"ovsdb-ovs":      e.ovsServerPid,
+	}
+	for name, pid := range pids {
+		if e.alloc == "jemalloc" {
+			if err := verifyJemallocLoaded(pid); err != nil {
+				return fmt.Errorf("%s (pid %d): %w", name, pid, err)
+			}
+		} else {
+			if err := verifyJemallocNotLoaded(pid); err != nil {
+				return fmt.Errorf("%s (pid %d): %w", name, pid, err)
+			}
 		}
 	}
 
@@ -709,12 +734,16 @@ func (e *OVNEnvironment) sampleMemory() PodMemSnapshot {
 	}
 	for name, pid := range pids {
 		mem := getProcMem(pid)
-		// RssAnon isolates private heap allocations (preventing 6x multi-counting of shared libraries)
-		// VmHWM captures the true kernel-recorded high-water mark of resident memory
+		// RssAnon isolates private heap allocations (preventing 6x multi-counting of shared libraries).
+		// VmHWM captures the kernel-recorded high-water mark of resident memory.
+		// Subtract constant file-backed / shared library pages (VmRSS - RssAnon) from VmHWM to derive
+		// the true kernel-tracked peak private heap allocation.
+		sharedFileRSS := math.Max(0, mem.VmRSS-mem.RssAnon)
+		peakAnon := round2(math.Max(mem.RssAnon, mem.VmHWM-sharedFileRSS))
 		snap.RSS[name] = mem.RssAnon
-		snap.Peak[name] = mem.VmHWM
+		snap.Peak[name] = peakAnon
 		snap.TotalRSS += mem.RssAnon
-		snap.TotalPeak += mem.VmHWM
+		snap.TotalPeak += peakAnon
 	}
 	snap.TotalRSS = round2(snap.TotalRSS)
 	snap.TotalPeak = round2(snap.TotalPeak)
@@ -722,7 +751,7 @@ func (e *OVNEnvironment) sampleMemory() PodMemSnapshot {
 }
 
 func buildBenchResult(base, peak, post PodMemSnapshot, addSec, addRate, addLoop, addLflow, delSec, delLoop float64) BenchResult {
-	totalPeak := math.Max(peak.TotalRSS, math.Max(post.TotalRSS, base.TotalRSS))
+	totalPeak := math.Max(peak.TotalPeak, math.Max(post.TotalRSS, base.TotalRSS))
 	res := BenchResult{
 		BaselineRSS: round2(base.TotalRSS),
 		PeakRSS:     round2(totalPeak),
@@ -737,7 +766,7 @@ func buildBenchResult(base, peak, post PodMemSnapshot, addSec, addRate, addLoop,
 		Components:  make(map[string]ComponentMem),
 	}
 	for name := range base.RSS {
-		compPeak := math.Max(peak.RSS[name], math.Max(post.RSS[name], base.RSS[name]))
+		compPeak := math.Max(peak.Peak[name], math.Max(post.RSS[name], base.RSS[name]))
 		res.Components[name] = ComponentMem{
 			BaselineRSS: round2(base.RSS[name]),
 			PeakRSS:     round2(compPeak),
@@ -785,12 +814,16 @@ func (e *OVNEnvironment) TrimMemory() {
 	// Purge datapath flow cache on ovs-vswitchd
 	vswCtl := filepath.Join(e.testDir, "vswitchd.ctl")
 	_ = exec.Command(e.ovnAppctl, "-t", vswCtl, "revalidator/purge").Run()
+	// Flush logical flow cache on ovn-controller
+	ctrlCtl := filepath.Join(e.testDir, fmt.Sprintf("ovn-controller.%d.ctl", e.controllerPid))
+	_ = exec.Command(e.ovnAppctl, "-t", ctrlCtl, "lflow-cache/flush").Run()
 }
 
 func (e *OVNEnvironment) Recompute() (wallMs, loopMs, lflowMs float64) {
 	_ = exec.Command(e.ovnAppctl, "-t", filepath.Join(e.testDir, "northd.ctl"), "stopwatch/reset").Run()
 	t0 := time.Now()
 	_ = exec.Command(e.ovnAppctl, "-t", filepath.Join(e.testDir, "northd.ctl"), "inc-engine/recompute").Run()
+	e.Sync()
 	wallMs = float64(time.Since(t0).Microseconds()) / 1000.0
 
 	outLoop, _ := exec.Command(e.ovnAppctl, "-t", filepath.Join(e.testDir, "northd.ctl"), "stopwatch/show", "ovn-northd-loop").CombinedOutput()
@@ -802,7 +835,6 @@ func (e *OVNEnvironment) Recompute() (wallMs, loopMs, lflowMs float64) {
 	}
 	lflowMs = parseStopwatch(string(outLflow))
 
-	e.Sync()
 	return wallMs, loopMs, lflowMs
 }
 
@@ -887,11 +919,16 @@ func setupBaselineSwitch(env *OVNEnvironment, swName string, nPorts int) (*Logic
 			pName := fmt.Sprintf("%s-p-%d", swName, j)
 			pNames = append(pNames, pName)
 			namedUUIDs[j] = fmt.Sprintf("base_p_%d", j)
+			pIdx := j + 2
+			hi := (pIdx >> 8) & 255
+			lo := pIdx & 255
+			mac := fmt.Sprintf("00:00:01:00:%02x:%02x", hi, lo)
+			ip := fmt.Sprintf("10.1.%d.%d", hi, lo)
 			ports[j] = &LogicalSwitchPort{
 				UUID:         namedUUIDs[j],
 				Name:         pName,
-				Addresses:    []string{fmt.Sprintf("00:00:01:00:%02x:%02x 10.1.%d.%d", (j>>8)&255, j&255, (j>>8)&255, j&255)},
-				PortSecurity: []string{fmt.Sprintf("00:00:01:00:%02x:%02x 10.1.%d.%d", (j>>8)&255, j&255, (j>>8)&255, j&255)},
+				Addresses:    []string{mac + " " + ip},
+				PortSecurity: []string{mac + " " + ip},
 			}
 		}
 		opsPorts, _ := env.ovsdbClient.Create(ports...)
@@ -1180,11 +1217,16 @@ func benchPortGroup(env *OVNEnvironment, n int) BenchResult {
 			idx := i + j
 			namedUUID := fmt.Sprintf("p_%d", idx)
 			namedUUIDs[j] = namedUUID
+			pIdx := idx + 2
+			hi := (pIdx >> 8) & 255
+			lo := pIdx & 255
+			mac := fmt.Sprintf("00:00:0a:01:%02x:%02x", hi, lo)
+			ip := fmt.Sprintf("10.1.%d.%d", hi, lo)
 			ports[j] = &LogicalSwitchPort{
 				UUID:         namedUUID,
 				Name:         fmt.Sprintf("p-%d", idx),
-				Addresses:    []string{fmt.Sprintf("00:00:00:00:%02x:%02x 10.0.%d.%d", (idx>>8)&255, idx&255, (idx>>8)&255, idx&255)},
-				PortSecurity: []string{fmt.Sprintf("00:00:00:00:%02x:%02x 10.0.%d.%d", (idx>>8)&255, idx&255, (idx>>8)&255, idx&255)},
+				Addresses:    []string{mac + " " + ip},
+				PortSecurity: []string{mac + " " + ip},
 			}
 		}
 		opsPorts, _ := env.ovsdbClient.Create(ports...)
