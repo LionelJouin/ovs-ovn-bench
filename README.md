@@ -121,10 +121,8 @@ env:
   - name: LD_PRELOAD
     value: "/usr/lib64/libjemalloc.so.2"
   - name: MALLOC_CONF
-    # In production under continuous traffic, use background thread decay (2s) without muzzy MADV_FREE:
-    value: "background_thread:true,dirty_decay_ms:2000,muzzy_decay_ms:0,narenas:4"
-    # Or for immediate page release on teardown in tightly-bounded containers:
-    # value: "dirty_decay_ms:0,muzzy_decay_ms:0,narenas:4"
+    # In production under continuous traffic, use 0-delay decay without muzzy MADV_FREE and disable THP:
+    value: "background_thread:false,dirty_decay_ms:0,muzzy_decay_ms:0,narenas:4,thp:never"
 ```
 
 To run end-to-end tests via `kube-burner`:

@@ -338,7 +338,7 @@ func waitForPidFile(path string, timeout time.Duration) (int, error) {
 // ---------------------------------------------------------------------------
 
 const (
-	defaultJemallocConf = "background_thread:true,dirty_decay_ms:0,muzzy_decay_ms:0"
+	defaultJemallocConf = "background_thread:false,dirty_decay_ms:0,muzzy_decay_ms:0,thp:never"
 	decayWaitTime       = 5 * time.Second
 )
 
@@ -501,6 +501,20 @@ func (e *OVNEnvironment) Start() error {
 		conf := e.jemallocConf
 		if conf == "" {
 			conf = defaultJemallocConf
+		}
+		if !strings.Contains(conf, "narenas") {
+			// Automatically scale narenas to the active thread count to prevent jemalloc from
+			// querying the host hardware topology and allocating 512+ arenas on cloud VMs (e.g. 64-core AMD EPYC)
+			narenas := e.nThreads
+			if narenas < 2 {
+				narenas = 2
+			}
+			conf = fmt.Sprintf("%s,narenas:%d", conf, narenas)
+		}
+		if !strings.Contains(conf, "thp") {
+			// Forbid Transparent Huge Pages (THP) so cloud runners (e.g. Azure with THP=[always])
+			// do not promote 4 KiB pages into 2 MiB physical allocations
+			conf = fmt.Sprintf("%s,thp:never", conf)
 		}
 		envVars = append(envVars, "LD_PRELOAD="+jlib, "MALLOC_CONF="+conf)
 	}
