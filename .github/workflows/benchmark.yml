@@ -82,6 +82,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: read
 
     steps:
       - name: Checkout repository
@@ -134,11 +135,12 @@ jobs:
 
   run-benchmark-multi:
     name: Run Benchmark (Multi-Iteration)
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     needs: build-and-push
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: read
 
     steps:
       - name: Checkout repository

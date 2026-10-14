@@ -3690,7 +3690,7 @@
   "system": {
     "cpu_cores": "22",
     "cpu_model": "Intel(R) Core(TM) Ultra 7 165H",
-    "glibc_version": "ldd (Ubuntu GLIBC 2.43-2ubuntu2.4) 2.43",
+    "glibc_version": "ldd (GNU libc) 2.43",
     "jemalloc_version": "5.3.0",
     "os": "Linux",
     "total_ram": "62Gi"

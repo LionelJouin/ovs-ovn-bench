@@ -14,7 +14,7 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 mkdir -p "$SCRIPT_DIR/results"
 
-echo "==> Building benchmark container (Ubuntu 24.04 with OVS, OVN, and jemalloc)..."
+echo "==> Building benchmark container (Ubuntu 26.04 with OVS, OVN, and jemalloc)..."
 $RUNTIME build -t ovs-ovn-bench "$SCRIPT_DIR"
 
 echo "==> Running OVS/OVN scaling benchmark inside container..."

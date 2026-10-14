@@ -1,10 +1,10 @@
 # OVS & OVN Scaling Benchmark: glibc malloc vs jemalloc
 
-**Date:** 2026-10-13 22:51:29
+**Date:** 2026-10-14 10:21:13
 **System:** Linux
 **CPU:** Intel(R) Core(TM) Ultra 7 165H (22 vCPUs)
 **Memory:** 62Gi
-**Glibc Version:** ldd (Ubuntu GLIBC 2.43-2ubuntu2.4) 2.43
+**Glibc Version:** ldd (GNU libc) 2.43
 **Jemalloc Version:** 5.3.0
 
 ---
@@ -23,12 +23,12 @@ Each benchmark evaluates individual OVN/OVS objects, OpenFlow rule scaling, or c
 | Scale (N) | Phase / Metric | glibc malloc | jemalloc | Relative Difference |
 |---|---|---|---|---|
 | **1** | Total Pod Baseline Heap (RssAnon) | 27.54 MiB | 31.68 MiB | +15.0% |
-| | Add Duration | 0.005 s | 0.006 s | ~Parity (<1ms) |
+| | Add Duration | 0.005 s | 0.006 s | +20.0% |
 | | Add Rate | 196 ops/s | 161 ops/s | -17.7% |
 | | Recompute (`ovn-northd-loop`) | 0.2 ms | 0.0 ms | ~Parity (<1ms) |
 | | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
 | | Total Pod Peak Heap (RssAnon) | 28.75 MiB | 32.82 MiB | +14.2% |
-| | Delete Duration | 0.010 s | 0.009 s | ~Parity (<1ms) |
+| | Delete Duration | 0.010 s | 0.009 s | -10.0% |
 | | Post-Delete Recompute | 0.1 ms | 0.1 ms | ~Parity (<1ms) |
 | | Total Pod Post-Delete Heap (RssAnon) | 28.30 MiB | 32.93 MiB | +16.4% |
 | | **Total Pod Retained Heap** | **+0.76 MiB** | **+1.25 MiB** | **+0.49 MiB** |
@@ -40,12 +40,12 @@ Each benchmark evaluates individual OVN/OVS objects, OpenFlow rule scaling, or c
 | | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.03 / -0.09 MiB | 2.35 / +0.08 MiB | +15.8% / +0.17 MiB |
 |---|---|---|---|---|
 | **10** | Total Pod Baseline Heap (RssAnon) | 27.57 MiB | 31.70 MiB | +15.0% |
-| | Add Duration | 0.005 s | 0.006 s | ~Parity (<1ms) |
+| | Add Duration | 0.005 s | 0.006 s | +20.0% |
 | | Add Rate | 1,973 ops/s | 1,604 ops/s | -18.7% |
 | | Recompute (`ovn-northd-loop`) | 0.0 ms | 0.2 ms | ~Parity (<1ms) |
 | | Logical Flow (`lflow`) | 0.0 ms | 1.0 ms | N/A |
 | | Total Pod Peak Heap (RssAnon) | 30.17 MiB | 34.05 MiB | +12.9% |
-| | Delete Duration | 0.009 s | 0.010 s | ~Parity (<1ms) |
+| | Delete Duration | 0.009 s | 0.010 s | +11.1% |
 | | Post-Delete Recompute | 0.0 ms | 0.1 ms | N/A |
 | | Total Pod Post-Delete Heap (RssAnon) | 29.51 MiB | 34.11 MiB | +15.6% |
 | | **Total Pod Retained Heap** | **+1.94 MiB** | **+2.41 MiB** | **+0.47 MiB** |
@@ -57,12 +57,12 @@ Each benchmark evaluates individual OVN/OVS objects, OpenFlow rule scaling, or c
 | | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.10 / +0.03 MiB | 2.46 / +0.19 MiB | +17.1% / +0.16 MiB |
 |---|---|---|---|---|
 | **100** | Total Pod Baseline Heap (RssAnon) | 27.51 MiB | 31.65 MiB | +15.0% |
-| | Add Duration | 0.019 s | 0.018 s | ~Parity (<1ms) |
+| | Add Duration | 0.019 s | 0.018 s | -5.3% |
 | | Add Rate | 5,374 ops/s | 5,596 ops/s | +4.1% |
 | | Recompute (`ovn-northd-loop`) | 0.1 ms | 0.0 ms | ~Parity (<1ms) |
 | | Logical Flow (`lflow`) | 1.0 ms | 0.0 ms | ~Parity (<1ms) |
 | | Total Pod Peak Heap (RssAnon) | 39.59 MiB | 40.12 MiB | +1.3% |
-| | Delete Duration | 0.019 s | 0.013 s | ~Parity (<1ms) |
+| | Delete Duration | 0.019 s | 0.013 s | -31.6% |
 | | Post-Delete Recompute | 0.0 ms | 0.1 ms | ~Parity (<1ms) |
 | | Total Pod Post-Delete Heap (RssAnon) | 37.51 MiB | 38.22 MiB | +1.9% |
 | | **Total Pod Retained Heap** | **+10.00 MiB** | **+6.57 MiB** | **-3.43 MiB** |
@@ -74,12 +74,12 @@ Each benchmark evaluates individual OVN/OVS objects, OpenFlow rule scaling, or c
 | | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 4.00 / +1.11 MiB | 3.56 / +0.56 MiB | -11.0% / -0.55 MiB |
 |---|---|---|---|---|
 | **1000** | Total Pod Baseline Heap (RssAnon) | 27.55 MiB | 31.69 MiB | +15.0% |
-| | Add Duration | 0.195 s | 0.174 s | ~Parity (<1ms) |
+| | Add Duration | 0.195 s | 0.174 s | -10.8% |
 | | Add Rate | 5,125 ops/s | 5,736 ops/s | +11.9% |
 | | Recompute (`ovn-northd-loop`) | 1.0 ms | 0.3 ms | -74.5% |
 | | Logical Flow (`lflow`) | 6.0 ms | 6.0 ms | ~Parity (±1%) |
 | | Total Pod Peak Heap (RssAnon) | 160.50 MiB | 149.79 MiB | -6.7% |
-| | Delete Duration | 0.347 s | 0.277 s | ~Parity (<1ms) |
+| | Delete Duration | 0.347 s | 0.277 s | -20.2% |
 | | Post-Delete Recompute | 0.8 ms | 0.1 ms | ~Parity (<1ms) |
 | | Total Pod Post-Delete Heap (RssAnon) | 68.22 MiB | 50.36 MiB | -26.2% |
 | | **Total Pod Retained Heap** | **+40.67 MiB** | **+18.67 MiB** | **-22.00 MiB** |
@@ -147,12 +147,12 @@ xychart-beta
 | Scale (N) | Phase / Metric | glibc malloc | jemalloc | Relative Difference |
 |---|---|---|---|---|
 | **1** | Total Pod Baseline Heap (RssAnon) | 30.13 MiB | 34.08 MiB | +13.1% |
-| | Add Duration | 0.004 s | 0.004 s | ~Parity (<1ms) |
+| | Add Duration | 0.004 s | 0.004 s | ~Parity (±1%) |
 | | Add Rate | 245 ops/s | 228 ops/s | -7.0% |
 | | Recompute (`ovn-northd-loop`) | 0.5 ms | 0.1 ms | ~Parity (<1ms) |
 | | Logical Flow (`lflow`) | 0.0 ms | 1.0 ms | N/A |
 | | Total Pod Peak Heap (RssAnon) | 30.46 MiB | 34.67 MiB | +13.8% |
-| | Delete Duration | 0.005 s | 0.005 s | ~Parity (<1ms) |
+| | Delete Duration | 0.005 s | 0.005 s | ~Parity (±1%) |
 | | Post-Delete Recompute | 0.0 ms | 0.0 ms | N/A |
 | | Total Pod Post-Delete Heap (RssAnon) | 29.77 MiB | 34.49 MiB | +15.9% |
 | | **Total Pod Retained Heap** | **-0.36 MiB** | **+0.41 MiB** | **+0.77 MiB** |
@@ -164,12 +164,12 @@ xychart-beta
 | | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.09 / -0.01 MiB | 2.47 / +0.06 MiB | +18.2% / +0.07 MiB |
 |---|---|---|---|---|
 | **10** | Total Pod Baseline Heap (RssAnon) | 30.11 MiB | 34.07 MiB | +13.2% |
-| | Add Duration | 0.005 s | 0.006 s | ~Parity (<1ms) |
+| | Add Duration | 0.005 s | 0.006 s | +20.0% |
 | | Add Rate | 2,021 ops/s | 1,813 ops/s | -10.3% |
 | | Recompute (`ovn-northd-loop`) | 0.1 ms | 0.0 ms | ~Parity (<1ms) |
 | | Logical Flow (`lflow`) | 1.0 ms | 0.0 ms | ~Parity (<1ms) |
 | | Total Pod Peak Heap (RssAnon) | 30.68 MiB | 34.97 MiB | +14.0% |
-| | Delete Duration | 0.005 s | 0.005 s | ~Parity (<1ms) |
+| | Delete Duration | 0.005 s | 0.005 s | ~Parity (±1%) |
 | | Post-Delete Recompute | 0.0 ms | 0.0 ms | N/A |
 | | Total Pod Post-Delete Heap (RssAnon) | 29.96 MiB | 34.62 MiB | +15.6% |
 | | **Total Pod Retained Heap** | **-0.15 MiB** | **+0.55 MiB** | **+0.70 MiB** |
@@ -181,12 +181,12 @@ xychart-beta
 | | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.09 / -0.01 MiB | 2.46 / +0.07 MiB | +17.7% / +0.08 MiB |
 |---|---|---|---|---|
 | **100** | Total Pod Baseline Heap (RssAnon) | 30.16 MiB | 34.08 MiB | +13.0% |
-| | Add Duration | 0.012 s | 0.010 s | ~Parity (<1ms) |
+| | Add Duration | 0.012 s | 0.010 s | -16.7% |
 | | Add Rate | 8,576 ops/s | 9,635 ops/s | +12.4% |
 | | Recompute (`ovn-northd-loop`) | 0.1 ms | 0.5 ms | ~Parity (<1ms) |
 | | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
 | | Total Pod Peak Heap (RssAnon) | 34.67 MiB | 37.87 MiB | +9.2% |
-| | Delete Duration | 0.008 s | 0.006 s | ~Parity (<1ms) |
+| | Delete Duration | 0.008 s | 0.006 s | -25.0% |
 | | Post-Delete Recompute | 0.0 ms | 0.2 ms | N/A |
 | | Total Pod Post-Delete Heap (RssAnon) | 31.26 MiB | 35.70 MiB | +14.2% |
 | | **Total Pod Retained Heap** | **+1.10 MiB** | **+1.62 MiB** | **+0.52 MiB** |
@@ -198,12 +198,12 @@ xychart-beta
 | | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.10 / -0.02 MiB | 2.48 / +0.06 MiB | +18.1% / +0.08 MiB |
 |---|---|---|---|---|
 | **1000** | Total Pod Baseline Heap (RssAnon) | 30.15 MiB | 34.10 MiB | +13.1% |
-| | Add Duration | 0.072 s | 0.126 s | ~Parity (<1ms) |
+| | Add Duration | 0.072 s | 0.126 s | +75.0% |
 | | Add Rate | 13,794 ops/s | 7,911 ops/s | -42.7% |
 | | Recompute (`ovn-northd-loop`) | 0.0 ms | 0.1 ms | ~Parity (<1ms) |
 | | Logical Flow (`lflow`) | 4.0 ms | 5.0 ms | +25.0% |
 | | Total Pod Peak Heap (RssAnon) | 68.10 MiB | 62.66 MiB | -8.0% |
-| | Delete Duration | 0.030 s | 0.033 s | ~Parity (<1ms) |
+| | Delete Duration | 0.030 s | 0.033 s | +10.0% |
 | | Post-Delete Recompute | 0.5 ms | 0.0 ms | ~Parity (<1ms) |
 | | Total Pod Post-Delete Heap (RssAnon) | 36.86 MiB | 38.94 MiB | +5.6% |
 | | **Total Pod Retained Heap** | **+6.71 MiB** | **+4.84 MiB** | **-1.87 MiB** |
@@ -220,7 +220,7 @@ xychart-beta
 | | Recompute (`ovn-northd-loop`) | 1.7 ms | 1.5 ms | -10.5% |
 | | Logical Flow (`lflow`) | 97.0 ms | 90.0 ms | -7.2% |
 | | Total Pod Peak Heap (RssAnon) | 376.41 MiB | 300.80 MiB | -20.1% |
-| | Delete Duration | 0.732 s | 0.386 s | ~Parity (<1ms) |
+| | Delete Duration | 0.732 s | 0.386 s | -47.3% |
 | | Post-Delete Recompute | 0.0 ms | 0.0 ms | ~Parity (<1ms) |
 | | Total Pod Post-Delete Heap (RssAnon) | 65.92 MiB | 47.24 MiB | -28.3% |
 | | **Total Pod Retained Heap** | **+35.78 MiB** | **+13.17 MiB** | **-22.61 MiB** |
@@ -271,12 +271,12 @@ xychart-beta
 | Scale (N) | Phase / Metric | glibc malloc | jemalloc | Relative Difference |
 |---|---|---|---|---|
 | **1** | Total Pod Baseline Heap (RssAnon) | 30.14 MiB | 34.11 MiB | +13.2% |
-| | Add Duration | 0.005 s | 0.005 s | ~Parity (<1ms) |
+| | Add Duration | 0.005 s | 0.005 s | ~Parity (±1%) |
 | | Address Insertion Rate | 207 addrs/s | 201 addrs/s | -2.8% |
 | | Recompute (`ovn-northd-loop`) | 0.0 ms | 0.1 ms | N/A |
 | | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
 | | Total Pod Peak Heap (RssAnon) | 30.48 MiB | 34.72 MiB | +13.9% |
-| | Delete Duration | 0.005 s | 0.005 s | ~Parity (<1ms) |
+| | Delete Duration | 0.005 s | 0.005 s | ~Parity (±1%) |
 | | Post-Delete Recompute | 0.0 ms | 0.0 ms | N/A |
 | | Total Pod Post-Delete Heap (RssAnon) | 29.81 MiB | 34.54 MiB | +15.9% |
 | | **Total Pod Retained Heap** | **-0.33 MiB** | **+0.43 MiB** | **+0.76 MiB** |
@@ -288,12 +288,12 @@ xychart-beta
 | | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.10 / -0.01 MiB | 2.47 / +0.06 MiB | +17.6% / +0.07 MiB |
 |---|---|---|---|---|
 | **10** | Total Pod Baseline Heap (RssAnon) | 30.14 MiB | 34.00 MiB | +12.8% |
-| | Add Duration | 0.005 s | 0.005 s | ~Parity (<1ms) |
+| | Add Duration | 0.005 s | 0.005 s | ~Parity (±1%) |
 | | Address Insertion Rate | 1,954 addrs/s | 1,967 addrs/s | ~Parity (±1%) |
 | | Recompute (`ovn-northd-loop`) | 0.5 ms | 0.1 ms | ~Parity (<1ms) |
 | | Logical Flow (`lflow`) | 1.0 ms | 0.0 ms | ~Parity (<1ms) |
 | | Total Pod Peak Heap (RssAnon) | 30.51 MiB | 34.66 MiB | +13.6% |
-| | Delete Duration | 0.005 s | 0.005 s | ~Parity (<1ms) |
+| | Delete Duration | 0.005 s | 0.005 s | ~Parity (±1%) |
 | | Post-Delete Recompute | 0.5 ms | 0.0 ms | ~Parity (<1ms) |
 | | Total Pod Post-Delete Heap (RssAnon) | 29.86 MiB | 34.52 MiB | +15.6% |
 | | **Total Pod Retained Heap** | **-0.28 MiB** | **+0.52 MiB** | **+0.80 MiB** |
@@ -305,12 +305,12 @@ xychart-beta
 | | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.09 / -0.01 MiB | 2.48 / +0.06 MiB | +18.7% / +0.07 MiB |
 |---|---|---|---|---|
 | **100** | Total Pod Baseline Heap (RssAnon) | 29.68 MiB | 34.04 MiB | +14.7% |
-| | Add Duration | 0.004 s | 0.005 s | ~Parity (<1ms) |
+| | Add Duration | 0.004 s | 0.005 s | +25.0% |
 | | Address Insertion Rate | 24,709 addrs/s | 19,677 addrs/s | -20.4% |
 | | Recompute (`ovn-northd-loop`) | 0.5 ms | 0.0 ms | ~Parity (<1ms) |
 | | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
 | | Total Pod Peak Heap (RssAnon) | 30.91 MiB | 35.13 MiB | +13.7% |
-| | Delete Duration | 0.004 s | 0.005 s | ~Parity (<1ms) |
+| | Delete Duration | 0.004 s | 0.005 s | +25.0% |
 | | Post-Delete Recompute | 0.0 ms | 0.0 ms | N/A |
 | | Total Pod Post-Delete Heap (RssAnon) | 30.18 MiB | 34.95 MiB | +15.8% |
 | | **Total Pod Retained Heap** | **+0.50 MiB** | **+0.91 MiB** | **+0.41 MiB** |
@@ -322,12 +322,12 @@ xychart-beta
 | | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.09 / +0.00 MiB | 2.48 / +0.06 MiB | +18.7% / +0.06 MiB |
 |---|---|---|---|---|
 | **1000** | Total Pod Baseline Heap (RssAnon) | 30.11 MiB | 34.04 MiB | +13.1% |
-| | Add Duration | 0.006 s | 0.006 s | ~Parity (<1ms) |
+| | Add Duration | 0.006 s | 0.006 s | ~Parity (±1%) |
 | | Address Insertion Rate | 158,353 addrs/s | 160,102 addrs/s | +1.1% |
 | | Recompute (`ovn-northd-loop`) | 0.0 ms | 0.0 ms | ~Parity (<1ms) |
 | | Logical Flow (`lflow`) | 1.0 ms | 1.0 ms | ~Parity (<1ms) |
 | | Total Pod Peak Heap (RssAnon) | 38.17 MiB | 38.52 MiB | ~Parity (±1%) |
-| | Delete Duration | 0.004 s | 0.004 s | ~Parity (<1ms) |
+| | Delete Duration | 0.004 s | 0.004 s | ~Parity (±1%) |
 | | Post-Delete Recompute | 0.5 ms | 0.0 ms | ~Parity (<1ms) |
 | | Total Pod Post-Delete Heap (RssAnon) | 32.94 MiB | 35.87 MiB | +8.9% |
 | | **Total Pod Retained Heap** | **+2.83 MiB** | **+1.83 MiB** | **-1.00 MiB** |
@@ -339,12 +339,12 @@ xychart-beta
 | | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.09 / -0.01 MiB | 2.47 / +0.07 MiB | +18.2% / +0.08 MiB |
 |---|---|---|---|---|
 | **10000** | Total Pod Baseline Heap (RssAnon) | 30.15 MiB | 34.06 MiB | +13.0% |
-| | Add Duration | 0.030 s | 0.020 s | ~Parity (<1ms) |
+| | Add Duration | 0.030 s | 0.020 s | -33.3% |
 | | Address Insertion Rate | 332,634 addrs/s | 506,688 addrs/s | +52.3% |
 | | Recompute (`ovn-northd-loop`) | 0.0 ms | 0.0 ms | ~Parity (<1ms) |
 | | Logical Flow (`lflow`) | 1.0 ms | 0.0 ms | ~Parity (<1ms) |
 | | Total Pod Peak Heap (RssAnon) | 49.34 MiB | 57.37 MiB | +16.3% |
-| | Delete Duration | 0.006 s | 0.005 s | ~Parity (<1ms) |
+| | Delete Duration | 0.006 s | 0.005 s | -16.7% |
 | | Post-Delete Recompute | 0.5 ms | 0.0 ms | ~Parity (<1ms) |
 | | Total Pod Post-Delete Heap (RssAnon) | 58.94 MiB | 37.39 MiB | -36.6% |
 | | **Total Pod Retained Heap** | **+28.79 MiB** | **+3.33 MiB** | **-25.46 MiB** |
@@ -395,12 +395,12 @@ xychart-beta
 | Scale (N) | Phase / Metric | glibc malloc | jemalloc | Relative Difference |
 |---|---|---|---|---|
 | **1** | Total Pod Baseline Heap (RssAnon) | 27.51 MiB | 31.69 MiB | +15.2% |
-| | Add Duration | 0.011 s | 0.012 s | ~Parity (<1ms) |
+| | Add Duration | 0.011 s | 0.012 s | +9.1% |
 | | Add Rate | 90 ops/s | 83 ops/s | -7.0% |
 | | Recompute (`ovn-northd-loop`) | 0.0 ms | 0.1 ms | N/A |
 | | Logical Flow (`lflow`) | 0.0 ms | 1.0 ms | N/A |
 | | Total Pod Peak Heap (RssAnon) | 29.28 MiB | 33.46 MiB | +14.3% |
-| | Delete Duration | 0.009 s | 0.009 s | ~Parity (<1ms) |
+| | Delete Duration | 0.009 s | 0.009 s | ~Parity (±1%) |
 | | Post-Delete Recompute | 0.0 ms | 0.1 ms | N/A |
 | | Total Pod Post-Delete Heap (RssAnon) | 28.64 MiB | 33.20 MiB | +15.9% |
 | | **Total Pod Retained Heap** | **+1.13 MiB** | **+1.51 MiB** | **+0.38 MiB** |
@@ -412,12 +412,12 @@ xychart-beta
 | | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.03 / -0.08 MiB | 2.35 / +0.07 MiB | +15.8% / +0.15 MiB |
 |---|---|---|---|---|
 | **10** | Total Pod Baseline Heap (RssAnon) | 27.55 MiB | 31.66 MiB | +14.9% |
-| | Add Duration | 0.013 s | 0.013 s | ~Parity (<1ms) |
+| | Add Duration | 0.013 s | 0.013 s | ~Parity (±1%) |
 | | Add Rate | 775 ops/s | 774 ops/s | ~Parity (±1%) |
 | | Recompute (`ovn-northd-loop`) | 0.1 ms | 0.0 ms | ~Parity (<1ms) |
 | | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
 | | Total Pod Peak Heap (RssAnon) | 30.50 MiB | 34.90 MiB | +14.4% |
-| | Delete Duration | 0.010 s | 0.010 s | ~Parity (<1ms) |
+| | Delete Duration | 0.010 s | 0.010 s | ~Parity (±1%) |
 | | Post-Delete Recompute | 0.0 ms | 0.0 ms | N/A |
 | | Total Pod Post-Delete Heap (RssAnon) | 30.10 MiB | 34.66 MiB | +15.1% |
 | | **Total Pod Retained Heap** | **+2.55 MiB** | **+3.00 MiB** | **+0.45 MiB** |
@@ -429,12 +429,12 @@ xychart-beta
 | | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.10 / +0.03 MiB | 2.47 / +0.20 MiB | +17.6% / +0.17 MiB |
 |---|---|---|---|---|
 | **100** | Total Pod Baseline Heap (RssAnon) | 27.56 MiB | 31.68 MiB | +14.9% |
-| | Add Duration | 0.025 s | 0.023 s | ~Parity (<1ms) |
+| | Add Duration | 0.025 s | 0.023 s | -8.0% |
 | | Add Rate | 3,984 ops/s | 4,308 ops/s | +8.1% |
 | | Recompute (`ovn-northd-loop`) | 0.0 ms | 0.0 ms | ~Parity (<1ms) |
 | | Logical Flow (`lflow`) | 1.0 ms | 0.0 ms | ~Parity (<1ms) |
 | | Total Pod Peak Heap (RssAnon) | 43.07 MiB | 42.71 MiB | ~Parity (±1%) |
-| | Delete Duration | 0.021 s | 0.017 s | ~Parity (<1ms) |
+| | Delete Duration | 0.021 s | 0.017 s | -19.0% |
 | | Post-Delete Recompute | 0.0 ms | 0.2 ms | ~Parity (<1ms) |
 | | Total Pod Post-Delete Heap (RssAnon) | 38.59 MiB | 39.55 MiB | +2.5% |
 | | **Total Pod Retained Heap** | **+11.03 MiB** | **+7.87 MiB** | **-3.16 MiB** |
@@ -446,12 +446,12 @@ xychart-beta
 | | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 3.99 / +0.99 MiB | 3.59 / +0.57 MiB | -10.0% / -0.42 MiB |
 |---|---|---|---|---|
 | **1000** | Total Pod Baseline Heap (RssAnon) | 27.57 MiB | 31.68 MiB | +14.9% |
-| | Add Duration | 0.490 s | 0.495 s | ~Parity (<1ms) |
+| | Add Duration | 0.490 s | 0.495 s | +1.0% |
 | | Add Rate | 2,042 ops/s | 2,019 ops/s | -1.1% |
 | | Recompute (`ovn-northd-loop`) | 0.3 ms | 0.7 ms | ~Parity (<1ms) |
 | | Logical Flow (`lflow`) | 6.0 ms | 5.0 ms | -16.7% |
 | | Total Pod Peak Heap (RssAnon) | 167.58 MiB | 143.99 MiB | -14.1% |
-| | Delete Duration | 0.311 s | 0.244 s | ~Parity (<1ms) |
+| | Delete Duration | 0.311 s | 0.244 s | -21.5% |
 | | Post-Delete Recompute | 0.0 ms | 0.0 ms | ~Parity (<1ms) |
 | | Total Pod Post-Delete Heap (RssAnon) | 68.19 MiB | 48.92 MiB | -28.3% |
 | | **Total Pod Retained Heap** | **+40.62 MiB** | **+17.24 MiB** | **-23.38 MiB** |
@@ -519,12 +519,12 @@ xychart-beta
 | Scale (N) | Phase / Metric | glibc malloc | jemalloc | Relative Difference |
 |---|---|---|---|---|
 | **1** | Total Pod Baseline Heap (RssAnon) | 30.12 MiB | 34.03 MiB | +13.0% |
-| | Add Duration | 0.004 s | 0.005 s | ~Parity (<1ms) |
+| | Add Duration | 0.004 s | 0.005 s | +25.0% |
 | | Add Rate | 235 ops/s | 220 ops/s | -6.3% |
 | | Recompute (`ovn-northd-loop`) | 0.0 ms | 0.1 ms | N/A |
 | | Logical Flow (`lflow`) | 1.0 ms | 0.0 ms | ~Parity (<1ms) |
 | | Total Pod Peak Heap (RssAnon) | 30.12 MiB | 34.03 MiB | +13.0% |
-| | Delete Duration | 0.005 s | 0.005 s | ~Parity (<1ms) |
+| | Delete Duration | 0.005 s | 0.005 s | ~Parity (±1%) |
 | | Post-Delete Recompute | 0.0 ms | 0.5 ms | ~Parity (<1ms) |
 | | Total Pod Post-Delete Heap (RssAnon) | 29.45 MiB | 34.14 MiB | +15.9% |
 | | **Total Pod Retained Heap** | **-0.67 MiB** | **+0.11 MiB** | **+0.78 MiB** |
@@ -536,12 +536,12 @@ xychart-beta
 | | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.09 / -0.01 MiB | 2.47 / +0.07 MiB | +18.2% / +0.08 MiB |
 |---|---|---|---|---|
 | **10** | Total Pod Baseline Heap (RssAnon) | 29.70 MiB | 34.07 MiB | +14.7% |
-| | Add Duration | 0.005 s | 0.005 s | ~Parity (<1ms) |
+| | Add Duration | 0.005 s | 0.005 s | ~Parity (±1%) |
 | | Add Rate | 2,106 ops/s | 1,996 ops/s | -5.2% |
 | | Recompute (`ovn-northd-loop`) | 0.2 ms | 0.8 ms | ~Parity (<1ms) |
 | | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
 | | Total Pod Peak Heap (RssAnon) | 29.70 MiB | 34.06 MiB | +14.7% |
-| | Delete Duration | 0.005 s | 0.006 s | ~Parity (<1ms) |
+| | Delete Duration | 0.005 s | 0.006 s | +20.0% |
 | | Post-Delete Recompute | 0.6 ms | 0.0 ms | ~Parity (<1ms) |
 | | Total Pod Post-Delete Heap (RssAnon) | 29.43 MiB | 34.16 MiB | +16.1% |
 | | **Total Pod Retained Heap** | **-0.27 MiB** | **+0.09 MiB** | **+0.36 MiB** |
@@ -553,12 +553,12 @@ xychart-beta
 | | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.09 / -0.01 MiB | 2.48 / +0.06 MiB | +18.7% / +0.07 MiB |
 |---|---|---|---|---|
 | **100** | Total Pod Baseline Heap (RssAnon) | 30.14 MiB | 34.02 MiB | +12.9% |
-| | Add Duration | 0.005 s | 0.005 s | ~Parity (<1ms) |
+| | Add Duration | 0.005 s | 0.005 s | ~Parity (±1%) |
 | | Add Rate | 20,868 ops/s | 18,807 ops/s | -9.9% |
 | | Recompute (`ovn-northd-loop`) | 0.1 ms | 0.0 ms | ~Parity (<1ms) |
 | | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
 | | Total Pod Peak Heap (RssAnon) | 30.14 MiB | 34.02 MiB | +12.9% |
-| | Delete Duration | 0.005 s | 0.005 s | ~Parity (<1ms) |
+| | Delete Duration | 0.005 s | 0.005 s | ~Parity (±1%) |
 | | Post-Delete Recompute | 0.2 ms | 0.0 ms | ~Parity (<1ms) |
 | | Total Pod Post-Delete Heap (RssAnon) | 29.49 MiB | 34.08 MiB | +15.6% |
 | | **Total Pod Retained Heap** | **-0.65 MiB** | **+0.06 MiB** | **+0.71 MiB** |
@@ -570,12 +570,12 @@ xychart-beta
 | | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.09 / +0.00 MiB | 2.48 / +0.06 MiB | +18.7% / +0.06 MiB |
 |---|---|---|---|---|
 | **1000** | Total Pod Baseline Heap (RssAnon) | 30.15 MiB | 34.10 MiB | +13.1% |
-| | Add Duration | 0.008 s | 0.007 s | ~Parity (<1ms) |
+| | Add Duration | 0.008 s | 0.007 s | -12.5% |
 | | Add Rate | 118,666 ops/s | 136,369 ops/s | +14.9% |
 | | Recompute (`ovn-northd-loop`) | 0.0 ms | 0.5 ms | N/A |
 | | Logical Flow (`lflow`) | 0.0 ms | 0.0 ms | N/A |
 | | Total Pod Peak Heap (RssAnon) | 30.15 MiB | 34.10 MiB | +13.1% |
-| | Delete Duration | 0.005 s | 0.005 s | ~Parity (<1ms) |
+| | Delete Duration | 0.005 s | 0.005 s | ~Parity (±1%) |
 | | Post-Delete Recompute | 0.0 ms | 0.1 ms | N/A |
 | | Total Pod Post-Delete Heap (RssAnon) | 29.47 MiB | 34.16 MiB | +15.9% |
 | | **Total Pod Retained Heap** | **-0.68 MiB** | **+0.06 MiB** | **+0.74 MiB** |
@@ -587,12 +587,12 @@ xychart-beta
 | | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.09 / -0.02 MiB | 2.48 / +0.06 MiB | +18.7% / +0.08 MiB |
 |---|---|---|---|---|
 | **10000** | Total Pod Baseline Heap (RssAnon) | 30.14 MiB | 34.09 MiB | +13.1% |
-| | Add Duration | 0.023 s | 0.022 s | ~Parity (<1ms) |
+| | Add Duration | 0.023 s | 0.022 s | -4.3% |
 | | Add Rate | 429,996 ops/s | 457,498 ops/s | +6.4% |
 | | Recompute (`ovn-northd-loop`) | 0.0 ms | 0.2 ms | N/A |
 | | Logical Flow (`lflow`) | 1.0 ms | 0.0 ms | ~Parity (<1ms) |
 | | Total Pod Peak Heap (RssAnon) | 30.14 MiB | 34.02 MiB | +12.9% |
-| | Delete Duration | 0.005 s | 0.005 s | ~Parity (<1ms) |
+| | Delete Duration | 0.005 s | 0.005 s | ~Parity (±1%) |
 | | Post-Delete Recompute | 0.1 ms | 0.5 ms | ~Parity (<1ms) |
 | | Total Pod Post-Delete Heap (RssAnon) | 29.46 MiB | 34.12 MiB | +15.8% |
 | | **Total Pod Retained Heap** | **-0.68 MiB** | **+0.03 MiB** | **+0.71 MiB** |
@@ -643,10 +643,10 @@ xychart-beta
 | Scale (N) | Phase / Metric | glibc malloc | jemalloc | Relative Difference |
 |---|---|---|---|---|
 | **1** | Total Pod Baseline Heap (RssAnon) | 27.36 MiB | 31.49 MiB | +15.1% |
-| | Add Duration | 0.004 s | 0.004 s | ~Parity (<1ms) |
+| | Add Duration | 0.004 s | 0.004 s | ~Parity (±1%) |
 | | Add Rate | 236 ops/s | 257 ops/s | +8.6% |
 | | Total Pod Peak Heap (RssAnon) | 27.48 MiB | 31.56 MiB | +14.8% |
-| | Delete Duration | 0.003 s | 0.003 s | ~Parity (<1ms) |
+| | Delete Duration | 0.003 s | 0.003 s | ~Parity (±1%) |
 | | Total Pod Post-Delete Heap (RssAnon) | 26.87 MiB | 31.63 MiB | +17.7% |
 | | **Total Pod Retained Heap** | **-0.49 MiB** | **+0.14 MiB** | **+0.63 MiB** |
 | | ├─ `ovn-northd` (Peak / Retained Heap) | 5.92 / -0.13 MiB | 6.86 / +0.00 MiB | +15.9% / +0.13 MiB |
@@ -657,10 +657,10 @@ xychart-beta
 | | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.04 / -0.13 MiB | 2.34 / +0.07 MiB | +14.7% / +0.20 MiB |
 |---|---|---|---|---|
 | **10** | Total Pod Baseline Heap (RssAnon) | 27.35 MiB | 31.43 MiB | +14.9% |
-| | Add Duration | 0.005 s | 0.005 s | ~Parity (<1ms) |
+| | Add Duration | 0.005 s | 0.005 s | ~Parity (±1%) |
 | | Add Rate | 2,018 ops/s | 2,151 ops/s | +6.6% |
 | | Total Pod Peak Heap (RssAnon) | 27.47 MiB | 31.51 MiB | +14.7% |
-| | Delete Duration | 0.003 s | 0.004 s | ~Parity (<1ms) |
+| | Delete Duration | 0.003 s | 0.004 s | +33.3% |
 | | Total Pod Post-Delete Heap (RssAnon) | 26.92 MiB | 31.59 MiB | +17.3% |
 | | **Total Pod Retained Heap** | **-0.43 MiB** | **+0.16 MiB** | **+0.59 MiB** |
 | | ├─ `ovn-northd` (Peak / Retained Heap) | 5.92 / -0.11 MiB | 6.81 / +0.00 MiB | +15.0% / +0.11 MiB |
@@ -671,10 +671,10 @@ xychart-beta
 | | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.04 / -0.13 MiB | 2.34 / +0.05 MiB | +14.7% / +0.18 MiB |
 |---|---|---|---|---|
 | **100** | Total Pod Baseline Heap (RssAnon) | 27.35 MiB | 31.47 MiB | +15.1% |
-| | Add Duration | 0.007 s | 0.008 s | ~Parity (<1ms) |
+| | Add Duration | 0.007 s | 0.008 s | +14.3% |
 | | Add Rate | 13,342 ops/s | 12,493 ops/s | -6.4% |
 | | Total Pod Peak Heap (RssAnon) | 27.47 MiB | 31.61 MiB | +15.1% |
-| | Delete Duration | 0.003 s | 0.003 s | ~Parity (<1ms) |
+| | Delete Duration | 0.003 s | 0.003 s | ~Parity (±1%) |
 | | Total Pod Post-Delete Heap (RssAnon) | 26.97 MiB | 31.69 MiB | +17.5% |
 | | **Total Pod Retained Heap** | **-0.38 MiB** | **+0.22 MiB** | **+0.60 MiB** |
 | | ├─ `ovn-northd` (Peak / Retained Heap) | 5.92 / -0.10 MiB | 6.80 / +0.00 MiB | +14.9% / +0.10 MiB |
@@ -685,10 +685,10 @@ xychart-beta
 | | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.03 / -0.12 MiB | 2.33 / +0.06 MiB | +14.8% / +0.18 MiB |
 |---|---|---|---|---|
 | **1000** | Total Pod Baseline Heap (RssAnon) | 27.36 MiB | 31.41 MiB | +14.8% |
-| | Add Duration | 0.043 s | 0.039 s | ~Parity (<1ms) |
+| | Add Duration | 0.043 s | 0.039 s | -9.3% |
 | | Add Rate | 23,421 ops/s | 25,355 ops/s | +8.3% |
 | | Total Pod Peak Heap (RssAnon) | 28.10 MiB | 32.13 MiB | +14.3% |
-| | Delete Duration | 0.003 s | 0.003 s | ~Parity (<1ms) |
+| | Delete Duration | 0.003 s | 0.003 s | ~Parity (±1%) |
 | | Total Pod Post-Delete Heap (RssAnon) | 27.72 MiB | 32.08 MiB | +15.7% |
 | | **Total Pod Retained Heap** | **+0.36 MiB** | **+0.67 MiB** | **+0.31 MiB** |
 | | ├─ `ovn-northd` (Peak / Retained Heap) | 5.92 / -0.10 MiB | 6.80 / +0.00 MiB | +14.9% / +0.10 MiB |
@@ -699,10 +699,10 @@ xychart-beta
 | | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.04 / -0.13 MiB | 2.34 / +0.05 MiB | +14.7% / +0.18 MiB |
 |---|---|---|---|---|
 | **10000** | Total Pod Baseline Heap (RssAnon) | 27.36 MiB | 31.50 MiB | +15.1% |
-| | Add Duration | 0.337 s | 0.293 s | ~Parity (<1ms) |
+| | Add Duration | 0.337 s | 0.293 s | -13.1% |
 | | Add Rate | 29,679 ops/s | 34,183 ops/s | +15.2% |
 | | Total Pod Peak Heap (RssAnon) | 34.80 MiB | 38.91 MiB | +11.8% |
-| | Delete Duration | 0.006 s | 0.006 s | ~Parity (<1ms) |
+| | Delete Duration | 0.006 s | 0.006 s | ~Parity (±1%) |
 | | Total Pod Post-Delete Heap (RssAnon) | 35.04 MiB | 32.49 MiB | -7.3% |
 | | **Total Pod Retained Heap** | **+7.68 MiB** | **+0.99 MiB** | **-6.69 MiB** |
 | | ├─ `ovn-northd` (Peak / Retained Heap) | 5.92 / -0.12 MiB | 6.81 / +0.00 MiB | +15.0% / +0.12 MiB |
@@ -716,7 +716,7 @@ xychart-beta
 | | Add Duration | 2.984 s | 3.063 s | +2.6% |
 | | Add Rate | 33,506 ops/s | 32,646 ops/s | -2.6% |
 | | Total Pod Peak Heap (RssAnon) | 101.06 MiB | 102.88 MiB | +1.8% |
-| | Delete Duration | 0.037 s | 0.027 s | ~Parity (<1ms) |
+| | Delete Duration | 0.037 s | 0.027 s | -27.0% |
 | | Total Pod Post-Delete Heap (RssAnon) | 106.16 MiB | 32.90 MiB | -69.0% |
 | | **Total Pod Retained Heap** | **+78.79 MiB** | **+1.46 MiB** | **-77.33 MiB** |
 | | ├─ `ovn-northd` (Peak / Retained Heap) | 5.84 / -0.09 MiB | 6.82 / +0.00 MiB | +16.8% / +0.09 MiB |
@@ -766,12 +766,12 @@ xychart-beta
 | Scale (N) | Phase / Metric | glibc malloc | jemalloc | Relative Difference |
 |---|---|---|---|---|
 | **1** | Total Pod Baseline Heap (RssAnon) | 27.50 MiB | 31.45 MiB | +14.4% |
-| | Add Duration | 0.011 s | 0.012 s | ~Parity (<1ms) |
+| | Add Duration | 0.011 s | 0.012 s | +9.1% |
 | | Add Rate | 89 ops/s | 80 ops/s | -10.6% |
 | | Recompute (`ovn-northd-loop`) | 0.0 ms | 0.0 ms | N/A |
 | | Logical Flow (`lflow`) | 1.0 ms | 0.0 ms | ~Parity (<1ms) |
 | | Total Pod Peak Heap (RssAnon) | 31.26 MiB | 35.47 MiB | +13.5% |
-| | Delete Duration | 0.009 s | 0.009 s | ~Parity (<1ms) |
+| | Delete Duration | 0.009 s | 0.009 s | ~Parity (±1%) |
 | | Post-Delete Recompute | 0.0 ms | 0.0 ms | N/A |
 | | Total Pod Post-Delete Heap (RssAnon) | 29.25 MiB | 33.61 MiB | +14.9% |
 | | **Total Pod Retained Heap** | **+1.75 MiB** | **+2.16 MiB** | **+0.41 MiB** |
@@ -783,12 +783,12 @@ xychart-beta
 | | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.03 / -0.09 MiB | 2.35 / +0.07 MiB | +15.8% / +0.16 MiB |
 |---|---|---|---|---|
 | **10** | Total Pod Baseline Heap (RssAnon) | 27.34 MiB | 31.47 MiB | +15.1% |
-| | Add Duration | 0.014 s | 0.014 s | ~Parity (<1ms) |
+| | Add Duration | 0.014 s | 0.014 s | ~Parity (±1%) |
 | | Add Rate | 715 ops/s | 703 ops/s | -1.6% |
 | | Recompute (`ovn-northd-loop`) | 0.0 ms | 0.1 ms | ~Parity (<1ms) |
 | | Logical Flow (`lflow`) | 1.0 ms | 1.0 ms | ~Parity (<1ms) |
 | | Total Pod Peak Heap (RssAnon) | 32.85 MiB | 37.44 MiB | +14.0% |
-| | Delete Duration | 0.011 s | 0.010 s | ~Parity (<1ms) |
+| | Delete Duration | 0.011 s | 0.010 s | -9.1% |
 | | Post-Delete Recompute | 0.0 ms | 0.0 ms | ~Parity (<1ms) |
 | | Total Pod Post-Delete Heap (RssAnon) | 30.57 MiB | 34.65 MiB | +13.3% |
 | | **Total Pod Retained Heap** | **+3.23 MiB** | **+3.18 MiB** | **-0.05 MiB** |
@@ -800,12 +800,12 @@ xychart-beta
 | | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 2.10 / +0.03 MiB | 2.46 / +0.18 MiB | +17.1% / +0.15 MiB |
 |---|---|---|---|---|
 | **100** | Total Pod Baseline Heap (RssAnon) | 27.69 MiB | 31.48 MiB | +13.7% |
-| | Add Duration | 0.038 s | 0.038 s | ~Parity (<1ms) |
+| | Add Duration | 0.038 s | 0.038 s | ~Parity (±1%) |
 | | Add Rate | 2,659 ops/s | 2,615 ops/s | -1.7% |
 | | Recompute (`ovn-northd-loop`) | 0.0 ms | 0.0 ms | ~Parity (<1ms) |
 | | Logical Flow (`lflow`) | 1.0 ms | 1.0 ms | ~Parity (<1ms) |
 | | Total Pod Peak Heap (RssAnon) | 48.88 MiB | 49.87 MiB | +2.0% |
-| | Delete Duration | 0.023 s | 0.019 s | ~Parity (<1ms) |
+| | Delete Duration | 0.023 s | 0.019 s | -17.4% |
 | | Post-Delete Recompute | 0.5 ms | 0.0 ms | ~Parity (<1ms) |
 | | Total Pod Post-Delete Heap (RssAnon) | 38.66 MiB | 37.94 MiB | -1.9% |
 | | **Total Pod Retained Heap** | **+10.97 MiB** | **+6.46 MiB** | **-4.51 MiB** |
@@ -817,12 +817,12 @@ xychart-beta
 | | ├─ `ovsdb-server (OVS)` (Peak / Retained Heap) | 3.99 / +1.02 MiB | 3.58 / +0.43 MiB | -10.3% / -0.59 MiB |
 |---|---|---|---|---|
 | **1000** | Total Pod Baseline Heap (RssAnon) | 27.38 MiB | 31.44 MiB | +14.8% |
-| | Add Duration | 0.660 s | 0.660 s | ~Parity (<1ms) |
+| | Add Duration | 0.660 s | 0.660 s | ~Parity (±1%) |
 | | Add Rate | 1,516 ops/s | 1,515 ops/s | ~Parity (±1%) |
 | | Recompute (`ovn-northd-loop`) | 0.3 ms | 0.6 ms | ~Parity (<1ms) |
 | | Logical Flow (`lflow`) | 10.0 ms | 10.0 ms | ~Parity (±1%) |
 | | Total Pod Peak Heap (RssAnon) | 175.43 MiB | 164.82 MiB | -6.0% |
-| | Delete Duration | 0.425 s | 0.301 s | ~Parity (<1ms) |
+| | Delete Duration | 0.425 s | 0.301 s | -29.2% |
 | | Post-Delete Recompute | 0.1 ms | 0.0 ms | ~Parity (<1ms) |
 | | Total Pod Post-Delete Heap (RssAnon) | 70.13 MiB | 45.19 MiB | -35.6% |
 | | **Total Pod Retained Heap** | **+42.75 MiB** | **+13.75 MiB** | **-29.00 MiB** |
